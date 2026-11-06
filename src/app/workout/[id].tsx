@@ -3,15 +3,18 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { addDays, formatDateLong, formatDuration, todayKey } from '../../lib/date';
+import { addDays, formatClock, formatDateLong, formatDuration, todayKey } from '../../lib/date';
 import { uid } from '../../lib/id';
+import { isLastInSuperset } from '../../lib/routines';
 import { formatNumber, previousSets, workoutSetCount, workoutVolume } from '../../lib/stats';
-import type { Exercise, SetEntry, WorkoutExercise } from '../../lib/types';
+import type { Category, Exercise, SetEntry, WorkoutExercise } from '../../lib/types';
 import { useData, useExerciseMap } from '../../store/DataProvider';
 import { useRestTimer } from '../../store/RestTimer';
 import { Button, Card, Empty } from '../../ui/components';
 import { choose, confirm, notify } from '../../ui/dialog';
+import { ExerciseMenu } from '../../ui/ExerciseMenu';
 import { ExercisePicker } from '../../ui/ExercisePicker';
+import { MuscleFigure } from '../../ui/MuscleFigure';
 import { RestTimerBar } from '../../ui/RestTimerBar';
 import { SetHeader, SetRow } from '../../ui/SetRow';
 import { colors, radius, space } from '../../ui/theme';
@@ -25,6 +28,8 @@ function Elapsed({ since }: { since: number }) {
   return <Text style={styles.metaText}>진행 {formatDuration(now - since)}</Text>;
 }
 
+type PickerMode = { mode: 'add' } | { mode: 'swap'; weId: string } | null;
+
 export default function WorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data, dispatch } = useData();
@@ -32,7 +37,8 @@ export default function WorkoutScreen() {
   const exMap = useExerciseMap();
   const timer = useRestTimer();
   const insets = useSafeAreaInsets();
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [picker, setPicker] = useState<PickerMode>(null);
+  const [menuFor, setMenuFor] = useState<string | null>(null);
 
   const workout = data.workouts.find((w) => w.id === id);
   const unit = data.settings.unit;
@@ -46,6 +52,15 @@ export default function WorkoutScreen() {
     return map;
   }, [data.workouts, workout]);
 
+  // 슈퍼세트 그룹마다 A, B, C… 라벨
+  const supersetLabels = useMemo(() => {
+    const labels = new Map<string, string>();
+    for (const we of workout?.exercises ?? []) {
+      if (we.supersetId && !labels.has(we.supersetId)) labels.set(we.supersetId, String.fromCharCode(65 + labels.size));
+    }
+    return labels;
+  }, [workout]);
+
   if (!workout) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -57,8 +72,14 @@ export default function WorkoutScreen() {
 
   const inProgress = !workout.endedAt;
   const wid = workout.id;
+  const menuIndex = workout.exercises.findIndex((we) => we.id === menuFor);
+  const menuWe = menuIndex >= 0 ? workout.exercises[menuIndex] : null;
 
-  const addExercise = (exercise: Exercise) => {
+  const onPick = (exercise: Exercise) => {
+    if (picker?.mode === 'swap') {
+      dispatch({ type: 'updateWorkoutExercise', workoutId: wid, weId: picker.weId, patch: { exerciseId: exercise.id } });
+      return;
+    }
     const prev = previousSets(data.workouts, exercise.id, workout);
     const first = prev?.[0];
     dispatch({
@@ -88,7 +109,10 @@ export default function WorkoutScreen() {
       return;
     }
     dispatch({ type: 'updateSet', workoutId: wid, weId: we.id, setId: set.id, patch: { done: !set.done } });
-    if (!set.done && inProgress) timer.start(data.settings.restSeconds);
+    // 슈퍼세트는 그룹의 마지막 종목을 끝냈을 때만 휴식
+    if (!set.done && inProgress && isLastInSuperset(workout.exercises, we.id)) {
+      timer.start(we.restSeconds ?? data.settings.restSeconds);
+    }
   };
 
   const removeSet = async (we: WorkoutExercise, set: SetEntry, index: number) => {
@@ -145,6 +169,9 @@ export default function WorkoutScreen() {
     dispatch({ type: 'updateWorkout', id: wid, patch: { date: next } });
   };
 
+  // 시트가 닫히는 애니메이션이 끝난 뒤 다음 모달을 연다 (iOS는 모달 두 개를 동시에 못 띄움)
+  const afterSheet = (fn: () => void) => setTimeout(fn, 350);
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.bg }}
@@ -153,7 +180,7 @@ export default function WorkoutScreen() {
     >
       <Stack.Screen
         options={{
-          title: inProgress ? '운동 중' : '운동 기록',
+          title: workout.name ?? (inProgress ? '운동 중' : '운동 기록'),
           headerRight: () => (
             <Pressable onPress={deleteWorkout} hitSlop={10} accessibilityLabel="운동 삭제" accessibilityRole="button">
               <Ionicons name="trash-outline" size={22} color={colors.danger} />
@@ -167,12 +194,7 @@ export default function WorkoutScreen() {
             <Ionicons name="chevron-back" size={22} color={colors.textMuted} />
           </Pressable>
           <Text style={styles.date}>{formatDateLong(workout.date)}</Text>
-          <Pressable
-            onPress={() => shiftDate(1)}
-            hitSlop={10}
-            disabled={workout.date >= todayKey()}
-            accessibilityLabel="하루 뒤로"
-          >
+          <Pressable onPress={() => shiftDate(1)} hitSlop={10} disabled={workout.date >= todayKey()} accessibilityLabel="하루 뒤로">
             <Ionicons name="chevron-forward" size={22} color={workout.date >= todayKey() ? colors.border : colors.textMuted} />
           </Pressable>
         </View>
@@ -191,35 +213,46 @@ export default function WorkoutScreen() {
         <TextInput
           value={workout.note}
           onChangeText={(note) => dispatch({ type: 'updateWorkout', id: wid, patch: { note } })}
-          placeholder="메모 (컨디션, 특이사항 등)"
+          placeholder="오늘 운동 메모 (컨디션, 특이사항 등)"
           placeholderTextColor={colors.textFaint}
           multiline
           style={styles.note}
         />
 
-        {workout.exercises.map((we, i) => (
-          <ExerciseBlock
-            key={we.id}
-            we={we}
-            name={exMap.get(we.exerciseId)?.name ?? '(삭제된 종목)'}
-            prev={prevByExercise.get(we.exerciseId) ?? null}
-            unit={unit}
-            canMoveUp={i > 0}
-            canMoveDown={i < workout.exercises.length - 1}
-            onOpen={() => router.push(`/exercise/${we.exerciseId}`)}
-            onMove={(dir) => dispatch({ type: 'moveWorkoutExercise', workoutId: wid, weId: we.id, dir })}
-            onRemove={() => removeExercise(we)}
-            onAddSet={() => addSet(we)}
-            onToggleDone={(s) => toggleDone(we, s)}
-            onRemoveSet={(s, idx) => removeSet(we, s, idx)}
-            onChangeSet={(s, patch) => dispatch({ type: 'updateSet', workoutId: wid, weId: we.id, setId: s.id, patch })}
-          />
-        ))}
+        {workout.exercises.map((we) => {
+          const ex = exMap.get(we.exerciseId);
+          return (
+            <ExerciseBlock
+              key={we.id}
+              we={we}
+              name={ex?.name ?? '(삭제된 종목)'}
+              category={ex?.category ?? '기타'}
+              superset={we.supersetId ? supersetLabels.get(we.supersetId) : undefined}
+              rest={we.restSeconds ?? data.settings.restSeconds}
+              prev={prevByExercise.get(we.exerciseId) ?? null}
+              unit={unit}
+              onOpen={() => router.push(`/exercise/${we.exerciseId}`)}
+              onMenu={() => setMenuFor(we.id)}
+              onAddSet={() => addSet(we)}
+              onToggleDone={(s) => toggleDone(we, s)}
+              onRemoveSet={(s, idx) => removeSet(we, s, idx)}
+              onChangeSet={(s, patch) => dispatch({ type: 'updateSet', workoutId: wid, weId: we.id, setId: s.id, patch })}
+            />
+          );
+        })}
 
-        <Button title="+ 종목 추가" variant="secondary" onPress={() => setPickerOpen(true)} style={{ marginTop: space.lg }} />
+        <Button title="+ 종목 추가" variant="secondary" onPress={() => setPicker({ mode: 'add' })} style={{ marginTop: space.lg }} />
         {inProgress && <Button title="운동 완료" onPress={finish} style={{ marginTop: space.md }} />}
         {workout.exercises.length > 0 && (
-          <Text style={styles.hint}>세트 번호를 길게 누르면 삭제 · '이전' 기록을 누르면 값이 채워집니다</Text>
+          <>
+            <Button
+              title="이 구성을 루틴으로 저장"
+              variant="ghost"
+              onPress={() => router.push({ pathname: '/routine/edit', params: { fromWorkout: wid } })}
+              style={{ marginTop: space.sm }}
+            />
+            <Text style={styles.hint}>세트 번호를 길게 누르면 삭제 · '이전' 기록을 누르면 값이 채워집니다</Text>
+          </>
         )}
       </ScrollView>
 
@@ -227,7 +260,45 @@ export default function WorkoutScreen() {
         <RestTimerBar />
       </View>
 
-      <ExercisePicker visible={pickerOpen} onClose={() => setPickerOpen(false)} onPick={addExercise} />
+      <ExercisePicker visible={picker !== null} onClose={() => setPicker(null)} onPick={onPick} />
+
+      {menuWe && (
+        <ExerciseMenu
+          visible
+          onClose={() => setMenuFor(null)}
+          name={exMap.get(menuWe.exerciseId)?.name ?? '종목'}
+          we={menuWe}
+          defaultRest={data.settings.restSeconds}
+          canMoveUp={menuIndex > 0}
+          canMoveDown={menuIndex < workout.exercises.length - 1}
+          hasNext={menuIndex < workout.exercises.length - 1}
+          onRest={(restSeconds) => dispatch({ type: 'updateWorkoutExercise', workoutId: wid, weId: menuWe.id, patch: { restSeconds } })}
+          onNote={(note) => dispatch({ type: 'updateWorkoutExercise', workoutId: wid, weId: menuWe.id, patch: { note } })}
+          onToggleSetNotes={(showSetNotes) =>
+            dispatch({ type: 'updateWorkoutExercise', workoutId: wid, weId: menuWe.id, patch: { showSetNotes } })
+          }
+          onMove={(dir) => dispatch({ type: 'moveWorkoutExercise', workoutId: wid, weId: menuWe.id, dir })}
+          onSwap={() => {
+            const weId = menuWe.id;
+            afterSheet(() => setPicker({ mode: 'swap', weId }));
+          }}
+          onAnalyze={() => {
+            const exId = menuWe.exerciseId;
+            afterSheet(() => router.push(`/exercise/${exId}`));
+          }}
+          onSuperset={() =>
+            dispatch(
+              menuWe.supersetId
+                ? { type: 'unlinkSuperset', workoutId: wid, weId: menuWe.id }
+                : { type: 'linkSuperset', workoutId: wid, weId: menuWe.id, groupId: uid() },
+            )
+          }
+          onRemove={() => {
+            const target = menuWe;
+            afterSheet(() => removeExercise(target));
+          }}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -235,13 +306,13 @@ export default function WorkoutScreen() {
 type BlockProps = {
   we: WorkoutExercise;
   name: string;
+  category: Category;
+  superset?: string;
+  rest: number;
   prev: SetEntry[] | null;
   unit: string;
-  canMoveUp: boolean;
-  canMoveDown: boolean;
   onOpen: () => void;
-  onMove: (dir: -1 | 1) => void;
-  onRemove: () => void;
+  onMenu: () => void;
   onAddSet: () => void;
   onToggleDone: (s: SetEntry) => void;
   onRemoveSet: (s: SetEntry, index: number) => void;
@@ -250,17 +321,23 @@ type BlockProps = {
 
 function ExerciseBlock(p: BlockProps) {
   return (
-    <Card style={styles.block}>
+    <Card style={[styles.block, p.superset ? styles.blockSuperset : null]}>
       <View style={styles.blockHead}>
-        <Pressable onPress={p.onOpen} style={{ flex: 1 }} accessibilityHint="종목 기록 보기">
-          <Text style={styles.blockTitle}>{p.name}</Text>
+        <Pressable onPress={p.onOpen} style={styles.blockTitleWrap} accessibilityHint="종목 기록 보기">
+          <MuscleFigure category={p.category} size={44} />
+          <View style={{ flex: 1 }}>
+            {p.superset ? <Text style={styles.supersetTag}>슈퍼세트 {p.superset}</Text> : null}
+            <Text style={styles.blockTitle} numberOfLines={1}>
+              {p.name}
+            </Text>
+            <Text style={styles.blockSub}>휴식 {formatClock(p.rest)}</Text>
+          </View>
         </Pressable>
-        <View style={styles.blockActions}>
-          <IconBtn name="arrow-up" disabled={!p.canMoveUp} onPress={() => p.onMove(-1)} label="위로" />
-          <IconBtn name="arrow-down" disabled={!p.canMoveDown} onPress={() => p.onMove(1)} label="아래로" />
-          <IconBtn name="close" onPress={p.onRemove} label="종목 삭제" color={colors.danger} />
-        </View>
+        <Pressable onPress={p.onMenu} hitSlop={8} style={styles.menuBtn} accessibilityLabel={`${p.name} 메뉴`} accessibilityRole="button">
+          <Ionicons name="ellipsis-vertical" size={18} color={colors.textMuted} />
+        </Pressable>
       </View>
+      {p.we.note ? <Text style={styles.exNote}>📝 {p.we.note}</Text> : null}
       <SetHeader unit={p.unit} />
       {p.we.sets.map((s, i) => (
         <SetRow
@@ -269,6 +346,7 @@ function ExerciseBlock(p: BlockProps) {
           set={s}
           prev={p.prev?.[i]}
           unit={p.unit}
+          showNote={p.we.showSetNotes}
           onChange={(patch) => p.onChangeSet(s, patch)}
           onToggleDone={() => p.onToggleDone(s)}
           onRemove={() => p.onRemoveSet(s, i)}
@@ -276,33 +354,6 @@ function ExerciseBlock(p: BlockProps) {
       ))}
       <Button title="+ 세트 추가" variant="ghost" small onPress={p.onAddSet} />
     </Card>
-  );
-}
-
-function IconBtn({
-  name,
-  onPress,
-  disabled,
-  label,
-  color = colors.textMuted,
-}: {
-  name: keyof typeof Ionicons.glyphMap;
-  onPress: () => void;
-  disabled?: boolean;
-  label: string;
-  color?: string;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      hitSlop={6}
-      accessibilityLabel={label}
-      accessibilityRole="button"
-      style={[styles.iconBtn, disabled && { opacity: 0.25 }]}
-    >
-      <Ionicons name={name} size={18} color={color} />
-    </Pressable>
   );
 }
 
@@ -324,10 +375,21 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   block: { marginTop: space.md, gap: 4, paddingHorizontal: space.md },
-  blockHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  blockTitle: { color: colors.primary, fontSize: 17, fontWeight: '800' },
-  blockActions: { flexDirection: 'row', gap: 2 },
-  iconBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  hint: { color: colors.textFaint, fontSize: 12, textAlign: 'center', marginTop: space.lg },
+  blockSuperset: { borderLeftWidth: 4, borderLeftColor: colors.warning },
+  blockHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  blockTitleWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md },
+  blockTitle: { color: colors.text, fontSize: 17, fontWeight: '800' },
+  blockSub: { color: colors.textFaint, fontSize: 12, marginTop: 1 },
+  supersetTag: { color: colors.warning, fontSize: 11, fontWeight: '800', marginBottom: 1 },
+  menuBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exNote: { color: colors.textMuted, fontSize: 13, marginBottom: 4 },
+  hint: { color: colors.textFaint, fontSize: 12, textAlign: 'center', marginTop: space.md },
   timer: { position: 'absolute', left: space.lg, right: space.lg },
 });

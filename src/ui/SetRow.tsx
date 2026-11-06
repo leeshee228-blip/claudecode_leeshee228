@@ -11,6 +11,7 @@ type Props = {
   set: SetEntry;
   prev?: SetEntry;
   unit: string;
+  showNote?: boolean;
   onChange: (patch: Partial<Omit<SetEntry, 'id'>>) => void;
   onToggleDone: () => void;
   onRemove: () => void;
@@ -59,9 +60,10 @@ function NumberField({
   );
 }
 
-export const SetRow = memo(function SetRow({ index, set, prev, unit, onChange, onToggleDone, onRemove }: Props) {
+export const SetRow = memo(function SetRow({ index, set, prev, unit, showNote, onChange, onToggleDone, onRemove }: Props) {
   const prevText = prev ? `${formatNumber(prev.weight)}×${prev.reps}` : '—';
   return (
+    <View>
     <View style={[styles.row, set.done && styles.rowDone]}>
       <Pressable
         onLongPress={onRemove}
@@ -110,6 +112,17 @@ export const SetRow = memo(function SetRow({ index, set, prev, unit, onChange, o
         <Ionicons name="checkmark" size={20} color={set.done ? colors.primaryText : colors.textFaint} />
       </Pressable>
     </View>
+    {showNote ? (
+      <TextInput
+        accessibilityLabel={`${index + 1}세트 메모`}
+        value={set.note ?? ''}
+        onChangeText={(note) => onChange({ note })}
+        placeholder={`${index + 1}세트 메모`}
+        placeholderTextColor={colors.textFaint}
+        style={styles.note}
+      />
+    ) : null}
+    </View>
   );
 });
 
@@ -153,6 +166,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkDone: { backgroundColor: colors.success },
+  note: {
+    marginLeft: 40,
+    marginTop: 2,
+    marginBottom: 4,
+    height: 34,
+    paddingHorizontal: 10,
+    borderRadius: radius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    color: colors.text,
+    fontSize: 13,
+  },
   head: { color: colors.textFaint, fontSize: 11, fontWeight: '600' },
   headInput: { width: 64, textAlign: 'center' },
 });

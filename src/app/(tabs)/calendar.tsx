@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useMemo, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { formatDateKo, monthGrid, todayKey } from '../../lib/date';
 import { formatNumber, workoutVolume } from '../../lib/stats';
@@ -21,6 +22,14 @@ export default function CalendarScreen() {
     return { year: d.getFullYear(), month: d.getMonth() };
   });
   const [selected, setSelected] = useState(today);
+  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+
+  // 홈의 주간 달력에서 날짜를 눌러 들어온 경우 그 날짜/달로 이동
+  useEffect(() => {
+    if (!dateParam || !/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) return;
+    setSelected(dateParam);
+    setCursor({ year: Number(dateParam.slice(0, 4)), month: Number(dateParam.slice(5, 7)) - 1 });
+  }, [dateParam]);
 
   const byDate = useMemo(() => {
     const map = new Map<string, Workout[]>();
@@ -95,7 +104,7 @@ export default function CalendarScreen() {
         <View>
           <Empty title="이 날은 운동 기록이 없어요" />
           {selected <= today && (
-            <Button title="이 날짜에 기록 추가" variant="secondary" onPress={() => startWorkout(selected)} />
+            <Button title="이 날짜에 기록 추가" variant="secondary" onPress={() => startWorkout({ date: selected })} />
           )}
         </View>
       ) : (

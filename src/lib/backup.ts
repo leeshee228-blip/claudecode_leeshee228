@@ -1,4 +1,4 @@
-import { CATEGORIES, type AppData, type Exercise, type Workout } from './types';
+import { CATEGORIES, type AppData, type Exercise, type Routine, type Workout } from './types';
 import { isCounted } from './stats';
 
 export function serialize(data: AppData): string {
@@ -26,6 +26,8 @@ function parseWorkout(v: unknown): Workout {
     startedAt: isNum(v.startedAt) ? v.startedAt : 0,
     ...(isNum(v.endedAt) ? { endedAt: v.endedAt } : {}),
     note: isStr(v.note) ? v.note : '',
+    ...(isStr(v.routineId) ? { routineId: v.routineId } : {}),
+    ...(isStr(v.name) ? { name: v.name } : {}),
     exercises: v.exercises.map((we) => {
       if (!isObj(we) || !isStr(we.id) || !isStr(we.exerciseId) || !Array.isArray(we.sets)) {
         throw new Error('운동 기록 형식이 올바르지 않습니다.');
@@ -33,6 +35,10 @@ function parseWorkout(v: unknown): Workout {
       return {
         id: we.id,
         exerciseId: we.exerciseId,
+        ...(isNum(we.restSeconds) && we.restSeconds > 0 ? { restSeconds: we.restSeconds } : {}),
+        ...(isStr(we.note) && we.note ? { note: we.note } : {}),
+        ...(we.showSetNotes === true ? { showSetNotes: true } : {}),
+        ...(isStr(we.supersetId) ? { supersetId: we.supersetId } : {}),
         sets: we.sets.map((s) => {
           if (!isObj(s) || !isStr(s.id)) throw new Error('세트 기록 형식이 올바르지 않습니다.');
           return {
@@ -40,8 +46,29 @@ function parseWorkout(v: unknown): Workout {
             weight: isNum(s.weight) ? s.weight : 0,
             reps: isNum(s.reps) ? s.reps : 0,
             done: s.done === true,
+            ...(isStr(s.note) && s.note ? { note: s.note } : {}),
           };
         }),
+      };
+    }),
+  };
+}
+
+function parseRoutine(v: unknown): Routine {
+  if (!isObj(v) || !isStr(v.id) || !isStr(v.name) || !Array.isArray(v.items)) {
+    throw new Error('루틴 데이터 형식이 올바르지 않습니다.');
+  }
+  return {
+    id: v.id,
+    name: v.name,
+    createdAt: isNum(v.createdAt) ? v.createdAt : 0,
+    items: v.items.map((it) => {
+      if (!isObj(it) || !isStr(it.id) || !isStr(it.exerciseId)) throw new Error('루틴 데이터 형식이 올바르지 않습니다.');
+      return {
+        id: it.id,
+        exerciseId: it.exerciseId,
+        sets: isNum(it.sets) && it.sets > 0 ? Math.round(it.sets) : 3,
+        ...(isNum(it.restSeconds) && it.restSeconds > 0 ? { restSeconds: it.restSeconds } : {}),
       };
     }),
   };
@@ -63,6 +90,7 @@ export function parseBackup(text: string): AppData {
     version: 1,
     exercises: raw.exercises.map(parseExercise),
     workouts: raw.workouts.map(parseWorkout),
+    routines: Array.isArray(raw.routines) ? raw.routines.map(parseRoutine) : [],
     settings: {
       restSeconds: isNum(settings.restSeconds) && settings.restSeconds > 0 ? settings.restSeconds : 90,
       unit: settings.unit === 'lb' ? 'lb' : 'kg',
@@ -81,6 +109,7 @@ export function mergeData(current: AppData, incoming: AppData): AppData {
     ...current,
     exercises: byId(current.exercises, incoming.exercises),
     workouts: byId(current.workouts, incoming.workouts),
+    routines: byId(current.routines, incoming.routines),
   };
 }
 
