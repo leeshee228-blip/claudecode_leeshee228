@@ -2,10 +2,12 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { formatDateKo, parseDateKey } from '../../lib/date';
+import { getGuide } from '../../lib/guides';
 import { exerciseHistory, formatNumber } from '../../lib/stats';
 import { useData, useExerciseMap } from '../../store/DataProvider';
 import { LineChart } from '../../ui/charts';
 import { Card, Chip, Empty, SectionTitle, Stat } from '../../ui/components';
+import { ExerciseGuide } from '../../ui/ExerciseGuide';
 import { colors, space } from '../../ui/theme';
 
 type Metric = 'best1RM' | 'maxWeight' | 'volume';
@@ -22,6 +24,7 @@ export default function ExerciseScreen() {
   const exercise = useExerciseMap().get(id);
   const unit = data.settings.unit;
   const [metric, setMetric] = useState<Metric>('best1RM');
+  const guide = getGuide(exercise);
 
   const history = useMemo(() => exerciseHistory(data.workouts, id), [data.workouts, id]);
   const maxWeight = Math.max(0, ...history.map((h) => h.maxWeight));
@@ -33,6 +36,15 @@ export default function ExerciseScreen() {
       <Stack.Screen options={{ title: exercise?.name ?? '종목 기록' }} />
       {exercise && <Text style={styles.category}>{exercise.category}</Text>}
 
+      {guide && exercise ? (
+        <ExerciseGuide guide={guide} name={exercise.name} />
+      ) : exercise?.custom ? (
+        <Card style={styles.customNote}>
+          <Text style={styles.customNoteText}>직접 추가한 종목이라 운동 설명이 없어요.</Text>
+        </Card>
+      ) : null}
+
+      <SectionTitle>나의 기록</SectionTitle>
       <Card style={styles.row}>
         <Stat label="최고 무게" value={`${formatNumber(maxWeight)}${unit}`} />
         <Stat label="추정 1RM" value={`${formatNumber(best1RM)}${unit}`} />
@@ -86,6 +98,8 @@ const styles = StyleSheet.create({
   content: { padding: space.lg, paddingBottom: 40 },
   category: { color: colors.textMuted, marginBottom: space.md },
   row: { flexDirection: 'row' },
+  customNote: { backgroundColor: colors.surfaceAlt, boxShadow: 'none' },
+  customNoteText: { color: colors.textMuted, fontSize: 14 },
   chips: { flexDirection: 'row', gap: space.sm, marginBottom: space.md },
   note: { color: colors.textFaint, fontSize: 11, marginTop: space.sm },
   histHead: { flexDirection: 'row', justifyContent: 'space-between' },

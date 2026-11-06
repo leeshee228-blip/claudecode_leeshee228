@@ -4,7 +4,7 @@ import { formatDateKo, formatDuration } from '../lib/date';
 import { formatNumber, isCounted, workoutSetCount, workoutVolume } from '../lib/stats';
 import type { Workout } from '../lib/types';
 import { useData, useExerciseMap } from '../store/DataProvider';
-import { colors, radius, space } from './theme';
+import { colors, radius, shadow, space } from './theme';
 
 export function WorkoutCard({ workout }: { workout: Workout }) {
   const router = useRouter();
@@ -16,7 +16,7 @@ export function WorkoutCard({ workout }: { workout: Workout }) {
   return (
     <Pressable
       onPress={() => router.push(`/workout/${workout.id}`)}
-      style={({ pressed }) => [styles.card, inProgress && styles.cardActive, pressed && { opacity: 0.8 }]}
+      style={({ pressed }) => [styles.card, inProgress && styles.cardActive, pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] }]}
     >
       <View style={styles.head}>
         <Text style={styles.date}>{formatDateKo(workout.date)}</Text>
@@ -71,17 +71,18 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: space.lg,
     gap: space.sm,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    ...shadow,
   },
-  cardActive: { borderColor: colors.primary, borderWidth: 1 },
+  cardActive: { borderColor: colors.primary },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  date: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  date: { color: colors.text, fontSize: 16, fontWeight: '800' },
   badge: {
     color: colors.primary,
     fontSize: 12,
     fontWeight: '700',
-    backgroundColor: '#1E2C4A',
+    backgroundColor: colors.primarySoft,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,

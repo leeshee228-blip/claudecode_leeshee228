@@ -216,8 +216,8 @@ export default function WorkoutScreen() {
           />
         ))}
 
-        <Button title="+ 종목 추가" variant="secondary" onPress={() => setPickerOpen(true)} style={{ marginTop: space.lg }} />
-        {inProgress && <Button title="운동 완료" onPress={finish} style={{ marginTop: space.md }} />}
+        <Button title="종목 추가" icon="add" variant="secondary" onPress={() => setPickerOpen(true)} style={{ marginTop: space.lg }} />
+        {inProgress && <Button title="운동 완료" icon="checkmark-circle" onPress={finish} style={{ marginTop: space.md }} />}
         {workout.exercises.length > 0 && (
           <Text style={styles.hint}>세트 번호를 길게 누르면 삭제 · '이전' 기록을 누르면 값이 채워집니다</Text>
         )}
@@ -252,8 +252,9 @@ function ExerciseBlock(p: BlockProps) {
   return (
     <Card style={styles.block}>
       <View style={styles.blockHead}>
-        <Pressable onPress={p.onOpen} style={{ flex: 1 }} accessibilityHint="종목 기록 보기">
+        <Pressable onPress={p.onOpen} style={styles.blockTitleRow} accessibilityHint="운동 방법과 기록 보기">
           <Text style={styles.blockTitle}>{p.name}</Text>
+          <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
         </Pressable>
         <View style={styles.blockActions}>
           <IconBtn name="arrow-up" disabled={!p.canMoveUp} onPress={() => p.onMove(-1)} label="위로" />
@@ -274,7 +275,7 @@ function ExerciseBlock(p: BlockProps) {
           onRemove={() => p.onRemoveSet(s, i)}
         />
       ))}
-      <Button title="+ 세트 추가" variant="ghost" small onPress={p.onAddSet} />
+      <Button title="세트 추가" icon="add" variant="ghost" small onPress={p.onAddSet} />
     </Card>
   );
 }
@@ -325,7 +326,8 @@ const styles = StyleSheet.create({
   },
   block: { marginTop: space.md, gap: 4, paddingHorizontal: space.md },
   blockHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  blockTitle: { color: colors.primary, fontSize: 17, fontWeight: '800' },
+  blockTitleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  blockTitle: { color: colors.primary, fontSize: 17, fontWeight: '800', flexShrink: 1 },
   blockActions: { flexDirection: 'row', gap: 2 },
   iconBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   hint: { color: colors.textFaint, fontSize: 12, textAlign: 'center', marginTop: space.lg },

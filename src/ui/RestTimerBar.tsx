@@ -40,13 +40,14 @@ function TimerButton({ label, onPress, strong }: { label: string; onPress: () =>
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.primaryMid,
+    boxShadow: '0px 6px 20px rgba(30, 45, 90, 0.15)',
   },
-  progress: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: '#1E2C4A' },
+  progress: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.primarySoft },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 40,
     borderRadius: radius.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceAlt,
     justifyContent: 'center',
   },
   btnStrong: { backgroundColor: colors.primary },

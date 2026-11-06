@@ -74,7 +74,7 @@ export default function CalendarScreen() {
                 style={styles.cell}
                 accessibilityLabel={`${formatDateKo(key)}${has ? ', 운동함' : ''}`}
               >
-                <View style={[styles.day, has && styles.dayDone, isSel && styles.daySel]}>
+                <View style={[styles.day, has && styles.dayDone, isSel && (has ? styles.daySelDone : styles.daySel)]}>
                   <Text style={[styles.dayText, has && styles.dayTextDone, isToday && !has && { color: colors.primary }]}>
                     {Number(key.slice(8))}
                   </Text>
@@ -93,7 +93,7 @@ export default function CalendarScreen() {
       <SectionTitle>{formatDateKo(selected)}</SectionTitle>
       {selectedWorkouts.length === 0 ? (
         <View>
-          <Empty title="이 날은 운동 기록이 없어요" />
+          <Empty icon="calendar-clear-outline" title="이 날은 운동 기록이 없어요" />
           {selected <= today && (
             <Button title="이 날짜에 기록 추가" variant="secondary" onPress={() => startWorkout(selected)} />
           )}
@@ -126,7 +126,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   dayDone: { backgroundColor: colors.primary },
-  daySel: { borderColor: colors.text },
+  daySel: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  daySelDone: { backgroundColor: colors.primary, borderColor: colors.primaryMid },
   dayText: { color: colors.textMuted, fontSize: 15, fontWeight: '600' },
   dayTextDone: { color: colors.primaryText, fontWeight: '800' },
   summary: { flexDirection: 'row', marginTop: space.md },
