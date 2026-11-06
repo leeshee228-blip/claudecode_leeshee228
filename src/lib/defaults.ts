@@ -43,6 +43,7 @@ export function createDefaultData(): AppData {
     version: 1,
     exercises: DEFAULT_EXERCISES,
     workouts: [],
+    routines: [],
     settings: { restSeconds: 90, unit: 'kg' },
   };
 }

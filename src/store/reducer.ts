@@ -1,12 +1,30 @@
-import type { AppData, Category, SetEntry, Settings, Workout } from '../lib/types';
+import type { AppData, Category, Routine, SetEntry, Settings, Workout, WorkoutExercise } from '../lib/types';
 
 export type Action =
   | { type: 'replaceAll'; data: AppData }
-  | { type: 'startWorkout'; id: string; date: string; startedAt: number }
+  | {
+      type: 'startWorkout';
+      id: string;
+      date: string;
+      startedAt: number;
+      exercises?: WorkoutExercise[];
+      routineId?: string;
+      name?: string;
+    }
   | { type: 'updateWorkout'; id: string; patch: Partial<Pick<Workout, 'note' | 'date' | 'endedAt'>> }
   | { type: 'deleteWorkout'; id: string }
   | { type: 'addWorkoutExercise'; workoutId: string; id: string; exerciseId: string; firstSet: SetEntry }
   | { type: 'removeWorkoutExercise'; workoutId: string; weId: string }
+  | {
+      type: 'updateWorkoutExercise';
+      workoutId: string;
+      weId: string;
+      patch: Partial<Pick<WorkoutExercise, 'exerciseId' | 'restSeconds' | 'note' | 'showSetNotes'>>;
+    }
+  | { type: 'linkSuperset'; workoutId: string; weId: string; groupId: string }
+  | { type: 'unlinkSuperset'; workoutId: string; weId: string }
+  | { type: 'saveRoutine'; routine: Routine }
+  | { type: 'deleteRoutine'; id: string }
   | { type: 'moveWorkoutExercise'; workoutId: string; weId: string; dir: -1 | 1 }
   | { type: 'addSet'; workoutId: string; weId: string; set: SetEntry }
   | { type: 'updateSet'; workoutId: string; weId: string; setId: string; patch: Partial<Omit<SetEntry, 'id'>> }
@@ -42,7 +60,15 @@ export function reducer(data: AppData, action: Action): AppData {
         ...data,
         workouts: [
           ...data.workouts,
-          { id: action.id, date: action.date, startedAt: action.startedAt, note: '', exercises: [] },
+          {
+            id: action.id,
+            date: action.date,
+            startedAt: action.startedAt,
+            note: '',
+            exercises: action.exercises ?? [],
+            ...(action.routineId ? { routineId: action.routineId } : {}),
+            ...(action.name ? { name: action.name } : {}),
+          },
         ],
       };
 
@@ -63,6 +89,53 @@ export function reducer(data: AppData, action: Action): AppData {
         ...w,
         exercises: w.exercises.filter((we) => we.id !== action.weId),
       }));
+
+    case 'updateWorkoutExercise':
+      return mapWorkout(data, action.workoutId, (w) => ({
+        ...w,
+        exercises: w.exercises.map((we) => (we.id === action.weId ? { ...we, ...action.patch } : we)),
+      }));
+
+    case 'linkSuperset':
+      // 이 종목과 바로 다음 종목을 같은 슈퍼세트로 묶는다
+      return mapWorkout(data, action.workoutId, (w) => {
+        const i = w.exercises.findIndex((we) => we.id === action.weId);
+        if (i < 0 || i >= w.exercises.length - 1) return w;
+        const group = w.exercises[i].supersetId ?? w.exercises[i + 1].supersetId ?? action.groupId;
+        const old = w.exercises[i + 1].supersetId;
+        return {
+          ...w,
+          exercises: w.exercises.map((we, j) =>
+            j === i || j === i + 1 || (old && we.supersetId === old) ? { ...we, supersetId: group } : we,
+          ),
+        };
+      });
+
+    case 'unlinkSuperset':
+      return mapWorkout(data, action.workoutId, (w) => {
+        const target = w.exercises.find((we) => we.id === action.weId);
+        const group = target?.supersetId;
+        if (!group) return w;
+        let exercises = w.exercises.map((we) => (we.id === action.weId ? { ...we, supersetId: undefined } : we));
+        // 남은 그룹원이 1개뿐이면 그룹 해제
+        if (exercises.filter((we) => we.supersetId === group).length < 2) {
+          exercises = exercises.map((we) => (we.supersetId === group ? { ...we, supersetId: undefined } : we));
+        }
+        return { ...w, exercises };
+      });
+
+    case 'saveRoutine': {
+      const exists = data.routines.some((r) => r.id === action.routine.id);
+      return {
+        ...data,
+        routines: exists
+          ? data.routines.map((r) => (r.id === action.routine.id ? action.routine : r))
+          : [...data.routines, action.routine],
+      };
+    }
+
+    case 'deleteRoutine':
+      return { ...data, routines: data.routines.filter((r) => r.id !== action.id) };
 
     case 'moveWorkoutExercise':
       return mapWorkout(data, action.workoutId, (w) => {

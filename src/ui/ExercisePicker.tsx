@@ -6,6 +6,7 @@ import { CATEGORIES, type Category, type Exercise } from '../lib/types';
 import { useData } from '../store/DataProvider';
 import { Button, Chip } from './components';
 import { confirm, notify } from './dialog';
+import { MuscleFigure } from './MuscleFigure';
 import { colors, radius, space } from './theme';
 
 type Props = {
@@ -22,8 +23,12 @@ export function ExercisePicker({ visible, onClose, onPick }: Props) {
   const [newCategory, setNewCategory] = useState<Category>('기타');
 
   const usedIds = useMemo(
-    () => new Set(data.workouts.flatMap((w) => w.exercises.map((we) => we.exerciseId))),
-    [data.workouts],
+    () =>
+      new Set([
+        ...data.workouts.flatMap((w) => w.exercises.map((we) => we.exerciseId)),
+        ...data.routines.flatMap((r) => r.items.map((it) => it.exerciseId)),
+      ]),
+    [data.workouts, data.routines],
   );
 
   const list = useMemo(() => {
@@ -59,7 +64,7 @@ export function ExercisePicker({ visible, onClose, onPick }: Props) {
   const confirmDelete = (e: Exercise) => {
     if (!e.custom) return;
     if (usedIds.has(e.id)) {
-      notify('삭제할 수 없음', '운동 기록에 사용된 종목은 삭제할 수 없습니다.');
+      notify('삭제할 수 없음', '운동 기록이나 루틴에 사용된 종목은 삭제할 수 없습니다.');
       return;
     }
     confirm('종목 삭제', `"${e.name}"을(를) 삭제할까요?`, '삭제', true).then((ok) => {
@@ -104,11 +109,14 @@ export function ExercisePicker({ visible, onClose, onPick }: Props) {
               onLongPress={() => confirmDelete(item)}
               style={({ pressed }) => [styles.item, pressed && { backgroundColor: colors.surfaceAlt }]}
             >
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemCat}>
-                {item.category}
-                {item.custom ? ' · 직접 추가' : ''}
-              </Text>
+              <MuscleFigure category={item.category} size={44} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemCat}>
+                  {item.category}
+                  {item.custom ? ' · 직접 추가' : ''}
+                </Text>
+              </View>
             </Pressable>
           )}
           ListFooterComponent={
@@ -168,8 +176,11 @@ const styles = StyleSheet.create({
   chipsContent: { paddingHorizontal: space.lg, gap: space.sm },
   wrapChips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
     paddingHorizontal: space.lg,
-    paddingVertical: 14,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },

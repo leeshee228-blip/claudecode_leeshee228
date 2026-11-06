@@ -29,6 +29,8 @@ function AppStack() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="workout/[id]" options={{ title: '운동' }} />
       <Stack.Screen name="exercise/[id]" options={{ title: '종목 기록' }} />
+      <Stack.Screen name="routine/[id]" options={{ title: '루틴' }} />
+      <Stack.Screen name="routine/edit" options={{ title: '루틴 편집', presentation: 'modal' }} />
     </Stack>
   );
 }

@@ -19,7 +19,10 @@ export function WorkoutCard({ workout }: { workout: Workout }) {
       style={({ pressed }) => [styles.card, inProgress && styles.cardActive, pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] }]}
     >
       <View style={styles.head}>
-        <Text style={styles.date}>{formatDateKo(workout.date)}</Text>
+        <Text style={styles.date} numberOfLines={1}>
+          {formatDateKo(workout.date)}
+          {workout.name ? <Text style={styles.routineName}>  {workout.name}</Text> : null}
+        </Text>
         {inProgress ? (
           <Text style={styles.badge}>진행 중</Text>
         ) : (
@@ -77,7 +80,7 @@ const styles = StyleSheet.create({
   },
   cardActive: { borderColor: colors.primary },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  date: { color: colors.text, fontSize: 16, fontWeight: '800' },
+  date: { color: colors.text, fontSize: 16, fontWeight: '700' },
   badge: {
     color: colors.primary,
     fontSize: 12,
