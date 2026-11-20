@@ -54,11 +54,44 @@ export function previousSets(
   return best?.sets ?? null;
 }
 
+/** 현재 운동 이전 모든 기록 중 해당 종목의 최고 추정 1RM (기록 없으면 0) */
+export function bestE1RMBefore(workouts: Workout[], exerciseId: string, current: Workout): number {
+  let best = 0;
+  for (const w of workouts) {
+    if (w.id === current.id || !isBefore(w, current)) continue;
+    for (const we of w.exercises) {
+      if (we.exerciseId !== exerciseId) continue;
+      for (const s of we.sets) if (isCounted(s)) best = Math.max(best, estimate1RM(s.weight, s.reps));
+    }
+  }
+  return best;
+}
+
+/**
+ * 이번 운동에서 개인 최고 기록(PR)을 갱신한 세트 id.
+ * 이전 기록이 있을 때만 판단하며, 같은 운동 안에서도 갱신될 때마다 표시한다.
+ */
+export function prSetIds(sets: SetEntry[], bestBefore: number): Set<string> {
+  const ids = new Set<string>();
+  if (bestBefore <= 0) return ids;
+  let running = bestBefore;
+  for (const s of sets) {
+    if (!isCounted(s)) continue;
+    const e = estimate1RM(s.weight, s.reps);
+    if (e > running + 1e-9) {
+      ids.add(s.id);
+      running = e;
+    }
+  }
+  return ids;
+}
+
 export type HistoryPoint = {
   workoutId: string;
   date: string;
   maxWeight: number;
   best1RM: number;
+  maxReps: number;
   volume: number;
   sets: SetEntry[];
 };
@@ -76,6 +109,7 @@ export function exerciseHistory(workouts: Workout[], exerciseId: string): Histor
       date: w.date,
       maxWeight: Math.max(...sets.map((s) => s.weight)),
       best1RM: Math.max(...sets.map((s) => estimate1RM(s.weight, s.reps))),
+      maxReps: Math.max(...sets.map((s) => s.reps)),
       volume: sets.reduce((sum, s) => sum + s.weight * s.reps, 0),
       sets,
     });
@@ -88,6 +122,7 @@ export type ExerciseSummary = {
   sessions: number;
   maxWeight: number;
   best1RM: number;
+  maxReps: number;
   lastDate: string;
 };
 
@@ -99,7 +134,7 @@ export function exerciseSummaries(workouts: Workout[]): ExerciseSummary[] {
       if (sets.length === 0) continue;
       let s = map.get(we.exerciseId);
       if (!s) {
-        s = { exerciseId: we.exerciseId, sessions: 0, maxWeight: 0, best1RM: 0, lastDate: w.date, seen: new Set() };
+        s = { exerciseId: we.exerciseId, sessions: 0, maxWeight: 0, best1RM: 0, maxReps: 0, lastDate: w.date, seen: new Set() };
         map.set(we.exerciseId, s);
       }
       if (!s.seen.has(w.id)) {
@@ -109,6 +144,7 @@ export function exerciseSummaries(workouts: Workout[]): ExerciseSummary[] {
       for (const set of sets) {
         s.maxWeight = Math.max(s.maxWeight, set.weight);
         s.best1RM = Math.max(s.best1RM, estimate1RM(set.weight, set.reps));
+        s.maxReps = Math.max(s.maxReps, set.reps);
       }
       if (w.date > s.lastDate) s.lastDate = w.date;
     }
@@ -153,4 +189,9 @@ export function weekStreak(workouts: Workout[], today: string): number {
 export function formatNumber(n: number): string {
   const rounded = Math.round(n * 10) / 10;
   return rounded.toLocaleString('ko-KR');
+}
+
+/** 세트 표기: 무게가 있으면 "60×10", 맨몸이면 "10회" (unit을 주면 "60kg×10") */
+export function formatSet(s: { weight: number; reps: number }, unit = ''): string {
+  return s.weight > 0 ? `${formatNumber(s.weight)}${unit}×${s.reps}` : `${s.reps}회`;
 }

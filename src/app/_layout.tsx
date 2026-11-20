@@ -24,6 +24,8 @@ function AppStack() {
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.bg },
         headerBackTitle: '뒤로',
+        // 뒤에 깔린 화면은 데이터가 바뀌어도 다시 그리지 않음
+        freezeOnBlur: true,
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

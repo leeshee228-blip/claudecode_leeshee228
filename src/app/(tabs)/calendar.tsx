@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { formatDateKo, monthGrid, todayKey } from '../../lib/date';
 import { formatNumber, workoutVolume } from '../../lib/stats';
@@ -25,11 +25,15 @@ export default function CalendarScreen() {
   const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
 
   // 홈의 주간 달력에서 날짜를 눌러 들어온 경우 그 날짜/달로 이동
-  useEffect(() => {
-    if (!dateParam || !/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) return;
-    setSelected(dateParam);
-    setCursor({ year: Number(dateParam.slice(0, 4)), month: Number(dateParam.slice(5, 7)) - 1 });
-  }, [dateParam]);
+  // (렌더 중 이전 값과 비교해 갱신 — effect로 상태를 맞추지 않음)
+  const [appliedParam, setAppliedParam] = useState<string | undefined>(undefined);
+  if (dateParam !== appliedParam) {
+    setAppliedParam(dateParam);
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      setSelected(dateParam);
+      setCursor({ year: Number(dateParam.slice(0, 4)), month: Number(dateParam.slice(5, 7)) - 1 });
+    }
+  }
 
   const byDate = useMemo(() => {
     const map = new Map<string, Workout[]>();

@@ -1,10 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatClock } from '../lib/date';
-import { useRestTimer } from '../store/RestTimer';
+import { useRestTimerActions, useRestTimerRemaining } from '../store/RestTimer';
 import { colors, radius, space } from './theme';
 
 export function RestTimerBar() {
-  const { remaining, total, add, stop } = useRestTimer();
+  const { remaining, total } = useRestTimerRemaining();
+  const { add, stop } = useRestTimerActions();
   if (remaining === null) return null;
   const progress = total > 0 ? Math.min(1, remaining / total) : 0;
 

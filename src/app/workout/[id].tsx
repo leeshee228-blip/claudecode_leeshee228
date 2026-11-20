@@ -6,10 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, formatClock, formatDateLong, formatDuration, todayKey } from '../../lib/date';
 import { uid } from '../../lib/id';
 import { isLastInSuperset } from '../../lib/routines';
-import { formatNumber, previousSets, workoutSetCount, workoutVolume } from '../../lib/stats';
+import { bestE1RMBefore, formatNumber, previousSets, prSetIds, workoutSetCount, workoutVolume } from '../../lib/stats';
 import type { Category, Exercise, SetEntry, WorkoutExercise } from '../../lib/types';
 import { useData, useExerciseMap } from '../../store/DataProvider';
-import { useRestTimer } from '../../store/RestTimer';
+import { useRestTimerActions } from '../../store/RestTimer';
 import { Button, Card, Empty } from '../../ui/components';
 import { choose, confirm, notify } from '../../ui/dialog';
 import { ExerciseMenu } from '../../ui/ExerciseMenu';
@@ -20,7 +20,7 @@ import { SetHeader, SetRow } from '../../ui/SetRow';
 import { colors, radius, space } from '../../ui/theme';
 
 function Elapsed({ since }: { since: number }) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 15000);
     return () => clearInterval(t);
@@ -35,7 +35,7 @@ export default function WorkoutScreen() {
   const { data, dispatch } = useData();
   const router = useRouter();
   const exMap = useExerciseMap();
-  const timer = useRestTimer();
+  const timer = useRestTimerActions();
   const insets = useSafeAreaInsets();
   const [picker, setPicker] = useState<PickerMode>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -43,11 +43,16 @@ export default function WorkoutScreen() {
   const workout = data.workouts.find((w) => w.id === id);
   const unit = data.settings.unit;
 
-  const prevByExercise = useMemo(() => {
-    const map = new Map<string, SetEntry[] | null>();
+  // 종목별 지난 세션 세트와 이전 최고 추정 1RM
+  const history = useMemo(() => {
+    const map = new Map<string, { prev: SetEntry[] | null; best: number }>();
     if (!workout) return map;
     for (const we of workout.exercises) {
-      if (!map.has(we.exerciseId)) map.set(we.exerciseId, previousSets(data.workouts, we.exerciseId, workout));
+      if (map.has(we.exerciseId)) continue;
+      map.set(we.exerciseId, {
+        prev: previousSets(data.workouts, we.exerciseId, workout),
+        best: bestE1RMBefore(data.workouts, we.exerciseId, workout),
+      });
     }
     return map;
   }, [data.workouts, workout]);
@@ -93,7 +98,7 @@ export default function WorkoutScreen() {
 
   const addSet = (we: WorkoutExercise) => {
     const last = we.sets[we.sets.length - 1];
-    const prev = prevByExercise.get(we.exerciseId)?.[we.sets.length];
+    const prev = history.get(we.exerciseId)?.prev?.[we.sets.length];
     const base = last ?? prev;
     dispatch({
       type: 'addSet',
@@ -229,7 +234,8 @@ export default function WorkoutScreen() {
               category={ex?.category ?? '기타'}
               superset={we.supersetId ? supersetLabels.get(we.supersetId) : undefined}
               rest={we.restSeconds ?? data.settings.restSeconds}
-              prev={prevByExercise.get(we.exerciseId) ?? null}
+              prev={history.get(we.exerciseId)?.prev ?? null}
+              bestBefore={history.get(we.exerciseId)?.best ?? 0}
               unit={unit}
               onOpen={() => router.push(`/exercise/${we.exerciseId}`)}
               onMenu={() => setMenuFor(we.id)}
@@ -251,7 +257,7 @@ export default function WorkoutScreen() {
               onPress={() => router.push({ pathname: '/routine/edit', params: { fromWorkout: wid } })}
               style={{ marginTop: space.sm }}
             />
-            <Text style={styles.hint}>세트 번호를 길게 누르면 삭제 · '이전' 기록을 누르면 값이 채워집니다</Text>
+            <Text style={styles.hint}>세트 번호 길게 누르기: 삭제 · 이전 기록 누르기: 값 채우기{'\n'}🏆 = 개인 최고 기록 갱신</Text>
           </>
         )}
       </ScrollView>
@@ -310,6 +316,7 @@ type BlockProps = {
   superset?: string;
   rest: number;
   prev: SetEntry[] | null;
+  bestBefore: number;
   unit: string;
   onOpen: () => void;
   onMenu: () => void;
@@ -320,6 +327,7 @@ type BlockProps = {
 };
 
 function ExerciseBlock(p: BlockProps) {
+  const prs = prSetIds(p.we.sets, p.bestBefore);
   return (
     <Card style={[styles.block, p.superset ? styles.blockSuperset : null]}>
       <View style={styles.blockHead}>
@@ -347,6 +355,7 @@ function ExerciseBlock(p: BlockProps) {
           prev={p.prev?.[i]}
           unit={p.unit}
           showNote={p.we.showSetNotes}
+          isPR={prs.has(s.id)}
           onChange={(patch) => p.onChangeSet(s, patch)}
           onToggleDone={() => p.onToggleDone(s)}
           onRemove={() => p.onRemoveSet(s, i)}

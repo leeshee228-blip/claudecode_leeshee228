@@ -50,6 +50,34 @@ function mapExercise(
   }));
 }
 
+/**
+ * 슈퍼세트는 연속된 2개 이상의 종목이어야 한다. 순서 변경·삭제 후
+ * 혼자 남거나 떨어진 종목의 그룹을 해제해 규칙을 지킨다.
+ */
+export function normalizeSupersets(exercises: WorkoutExercise[]): WorkoutExercise[] {
+  const out = [...exercises];
+  const seen = new Set<string>();
+  let changed = false;
+  let i = 0;
+  while (i < out.length) {
+    const id = out[i].supersetId;
+    let j = i + 1;
+    if (id) while (j < out.length && out[j].supersetId === id) j++;
+    // [i, j) 구간이 같은 그룹. 2개 미만이거나 앞에서 이미 쓰인 그룹이면 해제
+    if (id && (j - i < 2 || seen.has(id))) {
+      for (let k = i; k < j; k++) out[k] = { ...out[k], supersetId: undefined };
+      changed = true;
+    }
+    if (id) seen.add(id);
+    i = j;
+  }
+  return changed ? out : exercises;
+}
+
+function withExercises(w: Workout, exercises: WorkoutExercise[]): Workout {
+  return { ...w, exercises: normalizeSupersets(exercises) };
+}
+
 export function reducer(data: AppData, action: Action): AppData {
   switch (action.type) {
     case 'replaceAll':
@@ -85,10 +113,12 @@ export function reducer(data: AppData, action: Action): AppData {
       }));
 
     case 'removeWorkoutExercise':
-      return mapWorkout(data, action.workoutId, (w) => ({
-        ...w,
-        exercises: w.exercises.filter((we) => we.id !== action.weId),
-      }));
+      return mapWorkout(data, action.workoutId, (w) =>
+        withExercises(
+          w,
+          w.exercises.filter((we) => we.id !== action.weId),
+        ),
+      );
 
     case 'updateWorkoutExercise':
       return mapWorkout(data, action.workoutId, (w) => ({
@@ -103,12 +133,10 @@ export function reducer(data: AppData, action: Action): AppData {
         if (i < 0 || i >= w.exercises.length - 1) return w;
         const group = w.exercises[i].supersetId ?? w.exercises[i + 1].supersetId ?? action.groupId;
         const old = w.exercises[i + 1].supersetId;
-        return {
-          ...w,
-          exercises: w.exercises.map((we, j) =>
-            j === i || j === i + 1 || (old && we.supersetId === old) ? { ...we, supersetId: group } : we,
-          ),
-        };
+        return withExercises(
+          w,
+          w.exercises.map((we, j) => (j === i || j === i + 1 || (old && we.supersetId === old) ? { ...we, supersetId: group } : we)),
+        );
       });
 
     case 'unlinkSuperset':
@@ -116,12 +144,11 @@ export function reducer(data: AppData, action: Action): AppData {
         const target = w.exercises.find((we) => we.id === action.weId);
         const group = target?.supersetId;
         if (!group) return w;
-        let exercises = w.exercises.map((we) => (we.id === action.weId ? { ...we, supersetId: undefined } : we));
-        // 남은 그룹원이 1개뿐이면 그룹 해제
-        if (exercises.filter((we) => we.supersetId === group).length < 2) {
-          exercises = exercises.map((we) => (we.supersetId === group ? { ...we, supersetId: undefined } : we));
-        }
-        return { ...w, exercises };
+        // 그룹 중간 종목을 빼면 앞뒤가 끊어지므로 정규화가 남은 쪽을 정리한다
+        return withExercises(
+          w,
+          w.exercises.map((we) => (we.id === action.weId ? { ...we, supersetId: undefined } : we)),
+        );
       });
 
     case 'saveRoutine': {
@@ -144,7 +171,7 @@ export function reducer(data: AppData, action: Action): AppData {
         if (i < 0 || j < 0 || j >= w.exercises.length) return w;
         const exercises = [...w.exercises];
         [exercises[i], exercises[j]] = [exercises[j], exercises[i]];
-        return { ...w, exercises };
+        return withExercises(w, exercises);
       });
 
     case 'addSet':

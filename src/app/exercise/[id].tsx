@@ -2,18 +2,19 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { formatDateKo, parseDateKey } from '../../lib/date';
-import { exerciseHistory, formatNumber } from '../../lib/stats';
+import { exerciseHistory, formatNumber, formatSet } from '../../lib/stats';
 import { useData, useExerciseMap } from '../../store/DataProvider';
 import { LineChart } from '../../ui/charts';
 import { Card, Chip, Empty, SectionTitle, Stat } from '../../ui/components';
 import { colors, space } from '../../ui/theme';
 
-type Metric = 'best1RM' | 'maxWeight' | 'volume';
-const METRICS: { key: Metric; label: string }[] = [
+type Metric = 'best1RM' | 'maxWeight' | 'volume' | 'maxReps';
+const WEIGHTED: { key: Metric; label: string }[] = [
   { key: 'best1RM', label: '추정 1RM' },
   { key: 'maxWeight', label: '최고 무게' },
   { key: 'volume', label: '볼륨' },
 ];
+const BODYWEIGHT: { key: Metric; label: string }[] = [{ key: 'maxReps', label: '최다 반복' }];
 
 export default function ExerciseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,12 +22,16 @@ export default function ExerciseScreen() {
   const router = useRouter();
   const exercise = useExerciseMap().get(id);
   const unit = data.settings.unit;
-  const [metric, setMetric] = useState<Metric>('best1RM');
+  const [picked, setPicked] = useState<Metric>('best1RM');
 
   const history = useMemo(() => exerciseHistory(data.workouts, id), [data.workouts, id]);
   const maxWeight = Math.max(0, ...history.map((h) => h.maxWeight));
   const best1RM = Math.max(0, ...history.map((h) => h.best1RM));
-  const maxReps = Math.max(0, ...history.flatMap((h) => h.sets.map((s) => s.reps)));
+  const maxReps = Math.max(0, ...history.map((h) => h.maxReps));
+  // 무게 기록이 한 번도 없으면 맨몸 운동으로 보고 반복 횟수 위주로 보여준다
+  const bodyweight = history.length > 0 && maxWeight === 0;
+  const metrics = bodyweight ? BODYWEIGHT : WEIGHTED;
+  const metric = metrics.some((m) => m.key === picked) ? picked : metrics[0].key;
 
   return (
     <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={styles.content}>
@@ -34,16 +39,25 @@ export default function ExerciseScreen() {
       {exercise && <Text style={styles.category}>{exercise.category}</Text>}
 
       <Card style={styles.row}>
-        <Stat label="최고 무게" value={`${formatNumber(maxWeight)}${unit}`} />
-        <Stat label="추정 1RM" value={`${formatNumber(best1RM)}${unit}`} />
-        <Stat label="최다 반복" value={`${maxReps}회`} />
+        {bodyweight ? (
+          <>
+            <Stat label="최다 반복" value={`${maxReps}회`} />
+            <Stat label="수행 횟수" value={`${history.length}회`} />
+          </>
+        ) : (
+          <>
+            <Stat label="최고 무게" value={`${formatNumber(maxWeight)}${unit}`} />
+            <Stat label="추정 1RM" value={`${formatNumber(best1RM)}${unit}`} />
+            <Stat label="최다 반복" value={`${maxReps}회`} />
+          </>
+        )}
       </Card>
 
       <SectionTitle>추이</SectionTitle>
       <Card>
         <View style={styles.chips}>
-          {METRICS.map((m) => (
-            <Chip key={m.key} label={m.label} selected={metric === m.key} onPress={() => setMetric(m.key)} />
+          {metrics.map((m) => (
+            <Chip key={m.key} label={m.label} selected={metric === m.key} onPress={() => setPicked(m.key)} />
           ))}
         </View>
         <LineChart
@@ -52,7 +66,7 @@ export default function ExerciseScreen() {
             return { label: `${d.getMonth() + 1}/${d.getDate()}`, value: h[metric] };
           })}
         />
-        <Text style={styles.note}>추정 1RM = 무게 × (1 + 횟수 ÷ 30) (Epley 공식)</Text>
+        {!bodyweight && <Text style={styles.note}>추정 1RM = 무게 × (1 + 횟수 ÷ 30) (Epley 공식)</Text>}
       </Card>
 
       <SectionTitle>기록 ({history.length}회)</SectionTitle>
@@ -66,12 +80,13 @@ export default function ExerciseScreen() {
                 <View style={styles.histHead}>
                   <Text style={styles.histDate}>{formatDateKo(h.date)}</Text>
                   <Text style={styles.histMeta}>
-                    볼륨 {formatNumber(h.volume)}
-                    {unit}
+                    {h.maxWeight > 0
+                      ? `볼륨 ${formatNumber(h.volume)}${unit}`
+                      : `총 ${h.sets.reduce((sum, s) => sum + s.reps, 0)}회`}
                   </Text>
                 </View>
                 <Text style={styles.histSets}>
-                  {h.sets.map((s) => `${formatNumber(s.weight)}×${s.reps}`).join('   ')}
+                  {h.sets.map((s) => formatSet(s)).join('   ')}
                 </Text>
               </Card>
             </Pressable>

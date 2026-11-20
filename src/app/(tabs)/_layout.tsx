@@ -6,11 +6,17 @@ import { colors } from '../../ui/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-const icon =
-  (name: IconName, active: IconName) =>
-  ({ color, size, focused }: { color: ColorValue; size: number; focused: boolean }) => (
-    <Ionicons name={focused ? active : name} color={color as string} size={size} />
-  );
+type IconProps = { color: ColorValue; size: number; focused: boolean };
+
+function TabIcon({ name, active, color, size, focused }: IconProps & { name: IconName; active: IconName }) {
+  return <Ionicons name={focused ? active : name} color={color as string} size={size} />;
+}
+
+const icon = (name: IconName, active: IconName) => {
+  const render = (props: IconProps) => <TabIcon name={name} active={active} {...props} />;
+  render.displayName = `TabIcon(${name})`;
+  return render;
+};
 
 export default function TabsLayout() {
   return (
@@ -24,6 +30,8 @@ export default function TabsLayout() {
         tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textFaint,
+        // 보이지 않는 탭은 데이터가 바뀌어도 다시 그리지 않음 (운동 입력 중 성능)
+        freezeOnBlur: true,
       }}
     >
       <Tabs.Screen name="index" options={{ title: '운동 기록', tabBarLabel: '홈', tabBarIcon: icon('barbell-outline', 'barbell') }} />

@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatDateKo, formatDuration } from '../lib/date';
-import { formatNumber, isCounted, workoutSetCount, workoutVolume } from '../lib/stats';
+import { formatNumber, formatSet, isCounted, workoutSetCount, workoutVolume } from '../lib/stats';
 import type { Workout } from '../lib/types';
 import { useData, useExerciseMap } from '../store/DataProvider';
 import { colors, radius, space } from './theme';
@@ -36,14 +36,18 @@ export function WorkoutCard({ workout }: { workout: Workout }) {
         <View style={{ gap: 3 }}>
           {workout.exercises.slice(0, 5).map((we) => {
             const sets = we.sets.filter(isCounted);
-            const top = sets.reduce((m, s) => (s.weight > m.weight ? s : m), sets[0]);
+            // 가장 무거운 세트 (무게가 같으면 횟수가 많은 쪽)
+            const top = sets.reduce<(typeof sets)[number] | undefined>(
+              (m, s) => (!m || s.weight > m.weight || (s.weight === m.weight && s.reps > m.reps) ? s : m),
+              undefined,
+            );
             return (
               <View key={we.id} style={styles.line}>
                 <Text style={styles.exName} numberOfLines={1}>
                   {exMap.get(we.exerciseId)?.name ?? '(삭제된 종목)'}
                 </Text>
                 <Text style={styles.exSets}>
-                  {sets.length}세트{top ? ` · 최고 ${formatNumber(top.weight)}${unit}×${top.reps}` : ''}
+                  {sets.length}세트{top ? ` · 최고 ${formatSet(top, unit)}` : ''}
                 </Text>
               </View>
             );

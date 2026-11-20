@@ -65,14 +65,23 @@ export default function StatsScreen() {
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={styles.itemValue}>
-                  {formatNumber(s.maxWeight)}
-                  {unit}
-                </Text>
-                <Text style={styles.itemSub}>
-                  1RM≈{formatNumber(s.best1RM)}
-                  {unit}
-                </Text>
+                {s.maxWeight > 0 ? (
+                  <>
+                    <Text style={styles.itemValue}>
+                      {formatNumber(s.maxWeight)}
+                      {unit}
+                    </Text>
+                    <Text style={styles.itemSub}>
+                      1RM≈{formatNumber(s.best1RM)}
+                      {unit}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.itemValue}>{s.maxReps}회</Text>
+                    <Text style={styles.itemSub}>맨몸 최다 반복</Text>
+                  </>
+                )}
               </View>
             </Pressable>
           ))}

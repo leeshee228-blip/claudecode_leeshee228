@@ -1,8 +1,8 @@
 import * as Haptics from 'expo-haptics';
-import { memo, useEffect, useState } from 'react';
+import { memo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { formatNumber } from '../lib/stats';
+import { formatSet } from '../lib/stats';
 import type { SetEntry } from '../lib/types';
 import { colors, radius } from './theme';
 
@@ -12,6 +12,8 @@ type Props = {
   prev?: SetEntry;
   unit: string;
   showNote?: boolean;
+  /** 이 세트가 개인 최고 기록을 갱신했는지 */
+  isPR?: boolean;
   onChange: (patch: Partial<Omit<SetEntry, 'id'>>) => void;
   onToggleDone: () => void;
   onRemove: () => void;
@@ -33,25 +35,27 @@ function NumberField({
   done: boolean;
   label: string;
 }) {
-  const [text, setText] = useState(value ? String(value) : '');
-
-  useEffect(() => {
-    const parsed = parseFloat(text);
-    if ((Number.isNaN(parsed) ? 0 : parsed) !== value) setText(value ? String(value) : '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  const [text, setText] = useState(() => format(value));
+  // 외부에서 값이 바뀌면(이전 기록 채우기 등) 입력 중인 텍스트 대신 새 값을 보여준다.
+  // "62." 처럼 입력 중인 상태는 숫자로 같으므로 그대로 유지된다.
+  const shown = parse(text) === value ? text : format(value);
 
   return (
     <TextInput
       accessibilityLabel={label}
-      value={text}
+      value={shown}
       onChangeText={(t) => {
-        const cleaned = decimal ? t.replace(',', '.').replace(/[^0-9.]/g, '') : t.replace(/[^0-9]/g, '');
+        let cleaned = decimal ? t.replace(',', '.').replace(/[^0-9.]/g, '') : t.replace(/[^0-9]/g, '');
+        if (decimal) {
+          // 소수점은 하나만, 소수 둘째 자리까지
+          const [int, ...rest] = cleaned.split('.');
+          cleaned = rest.length ? `${int}.${rest.join('').slice(0, 2)}` : int;
+        }
         setText(cleaned);
-        const n = parseFloat(cleaned);
-        onChange(Number.isNaN(n) ? 0 : n);
+        onChange(parse(cleaned));
       }}
       keyboardType={decimal ? 'decimal-pad' : 'number-pad'}
+      maxLength={decimal ? 7 : 3}
       placeholder={placeholder}
       placeholderTextColor={colors.textFaint}
       selectTextOnFocus
@@ -60,8 +64,17 @@ function NumberField({
   );
 }
 
-export const SetRow = memo(function SetRow({ index, set, prev, unit, showNote, onChange, onToggleDone, onRemove }: Props) {
-  const prevText = prev ? `${formatNumber(prev.weight)}×${prev.reps}` : '—';
+function parse(t: string): number {
+  const n = parseFloat(t);
+  return Number.isNaN(n) ? 0 : n;
+}
+
+function format(n: number): string {
+  return n ? String(n) : '';
+}
+
+export const SetRow = memo(function SetRow({ index, set, prev, unit, showNote, isPR, onChange, onToggleDone, onRemove }: Props) {
+  const prevText = prev ? formatSet(prev) : '—';
   return (
     <View>
     <View style={[styles.row, set.done && styles.rowDone]}>
@@ -72,6 +85,11 @@ export const SetRow = memo(function SetRow({ index, set, prev, unit, showNote, o
         hitSlop={6}
       >
         <Text style={styles.index}>{index + 1}</Text>
+        {isPR ? (
+          <Text style={styles.pr} accessibilityLabel="개인 최고 기록">
+            🏆
+          </Text>
+        ) : null}
       </Pressable>
       <Pressable
         style={styles.prevCell}
@@ -142,6 +160,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, borderRadius: radius.sm },
   rowDone: { backgroundColor: colors.successBg },
   indexCell: { width: 32, alignItems: 'center' },
+  pr: { position: 'absolute', top: -10, right: -6, fontSize: 12 },
   index: { color: colors.textMuted, fontWeight: '700', fontSize: 15 },
   prevCell: { flex: 1, minWidth: 56 },
   prev: { color: colors.textFaint, fontSize: 13, fontVariant: ['tabular-nums'] },
