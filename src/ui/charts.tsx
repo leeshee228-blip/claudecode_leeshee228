@@ -78,7 +78,7 @@ export function BarChart({ data, height = 180 }: { data: ChartPoint[]; height?: 
                 width={barW}
                 height={Math.max(h, d.value > 0 ? 2 : 0)}
                 rx={4}
-                fill={last ? colors.primary : '#34507F'}
+                fill={last ? colors.primary : colors.primaryMid}
               />
             );
           })}

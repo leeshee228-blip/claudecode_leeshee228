@@ -1,18 +1,30 @@
+import type { ViewStyle } from 'react-native';
+
+/** 밝고 부드러운 라이트 테마 */
 export const colors = {
-  bg: '#0E0F12',
-  surface: '#17191E',
-  surfaceAlt: '#20232A',
-  border: '#2A2E37',
-  text: '#F2F3F5',
-  textMuted: '#9AA0AC',
-  textFaint: '#666C78',
-  primary: '#4F8CFF',
+  bg: '#F4F6FB',
+  surface: '#FFFFFF',
+  surfaceAlt: '#EEF1F7',
+  border: '#E2E7F0',
+  text: '#1B1F2A',
+  textMuted: '#5A6375',
+  textFaint: '#8A92A3',
+  primary: '#3D6DF2',
+  primarySoft: '#E8EEFF',
+  primaryMid: '#B7C9FA',
   primaryText: '#FFFFFF',
-  success: '#2FBF71',
-  successBg: '#16352A',
-  danger: '#F05252',
-  warning: '#F5A524',
+  success: '#1E9E5F',
+  successBg: '#E4F6EC',
+  danger: '#E5484D',
+  dangerSoft: '#FDECEC',
+  warning: '#F29D0C',
+  warningSoft: '#FFF4DE',
 };
 
-export const radius = { sm: 8, md: 12, lg: 16 };
+export const radius = { sm: 10, md: 14, lg: 20 };
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 };
+
+/** 카드용 은은한 그림자 */
+export const shadow: ViewStyle = {
+  boxShadow: '0px 2px 10px rgba(30, 45, 90, 0.07)',
+};

@@ -247,8 +247,8 @@ export default function WorkoutScreen() {
           );
         })}
 
-        <Button title="+ 종목 추가" variant="secondary" onPress={() => setPicker({ mode: 'add' })} style={{ marginTop: space.lg }} />
-        {inProgress && <Button title="운동 완료" onPress={finish} style={{ marginTop: space.md }} />}
+        <Button title="종목 추가" icon="add" variant="secondary" onPress={() => setPicker({ mode: 'add' })} style={{ marginTop: space.lg }} />
+        {inProgress && <Button title="운동 완료" icon="checkmark-circle" onPress={finish} style={{ marginTop: space.md }} />}
         {workout.exercises.length > 0 && (
           <>
             <Button
@@ -331,13 +331,16 @@ function ExerciseBlock(p: BlockProps) {
   return (
     <Card style={[styles.block, p.superset ? styles.blockSuperset : null]}>
       <View style={styles.blockHead}>
-        <Pressable onPress={p.onOpen} style={styles.blockTitleWrap} accessibilityHint="종목 기록 보기">
+        <Pressable onPress={p.onOpen} style={styles.blockTitleWrap} accessibilityHint="운동 방법과 기록 보기">
           <MuscleFigure category={p.category} size={44} />
           <View style={{ flex: 1 }}>
             {p.superset ? <Text style={styles.supersetTag}>슈퍼세트 {p.superset}</Text> : null}
-            <Text style={styles.blockTitle} numberOfLines={1}>
-              {p.name}
-            </Text>
+            <View style={styles.blockTitleRow}>
+              <Text style={styles.blockTitle} numberOfLines={1}>
+                {p.name}
+              </Text>
+              <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
+            </View>
             <Text style={styles.blockSub}>휴식 {formatClock(p.rest)}</Text>
           </View>
         </Pressable>
@@ -361,7 +364,7 @@ function ExerciseBlock(p: BlockProps) {
           onRemove={() => p.onRemoveSet(s, i)}
         />
       ))}
-      <Button title="+ 세트 추가" variant="ghost" small onPress={p.onAddSet} />
+      <Button title="세트 추가" icon="add" variant="ghost" small onPress={p.onAddSet} />
     </Card>
   );
 }
@@ -387,7 +390,8 @@ const styles = StyleSheet.create({
   blockSuperset: { borderLeftWidth: 4, borderLeftColor: colors.warning },
   blockHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   blockTitleWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.md },
-  blockTitle: { color: colors.text, fontSize: 17, fontWeight: '800' },
+  blockTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  blockTitle: { color: colors.text, fontSize: 17, fontWeight: '800', flexShrink: 1 },
   blockSub: { color: colors.textFaint, fontSize: 12, marginTop: 1 },
   supersetTag: { color: colors.warning, fontSize: 11, fontWeight: '800', marginBottom: 1 },
   menuBtn: {

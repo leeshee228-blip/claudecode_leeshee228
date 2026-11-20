@@ -42,7 +42,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <DataProvider>
         <RestTimerProvider>
-          <StatusBar style="light" />
+          <StatusBar style="dark" />
           <AppStack />
         </RestTimerProvider>
       </DataProvider>

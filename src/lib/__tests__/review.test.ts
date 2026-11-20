@@ -44,3 +44,13 @@ test('bodyweight sets format and summaries', () => {
   assert.equal(s.maxWeight, 0);
   assert.equal(s.maxReps, 12);
 });
+
+test('every built-in exercise has a guide', async () => {
+  const { DEFAULT_EXERCISES } = await import('../defaults');
+  const { getGuide } = await import('../guides');
+  for (const e of DEFAULT_EXERCISES) {
+    const g = getGuide(e);
+    assert.ok(g && g.steps.length >= 2 && g.muscles.length >= 1, `missing guide: ${e.name}`);
+  }
+  assert.equal(getGuide({ id: 'custom-x', name: '내 운동', category: '기타', custom: true }), undefined);
+});
