@@ -61,8 +61,8 @@ const CATEGORY_VIEW: Record<Category, { view: 'front' | 'back'; regions: Region[
   기타: { view: 'front', regions: [], crop: 'full' },
 };
 
-const BASE = '#C9D0DC';
-const LINE = '#B3BCCB';
+const BASE = '#E0E0E0';
+const LINE = '#CFCFCF';
 
 type Props = {
   category: Category;

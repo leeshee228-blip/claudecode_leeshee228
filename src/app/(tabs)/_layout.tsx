@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router/js-tabs';
 import type { ComponentProps } from 'react';
-import type { ColorValue } from 'react-native';
+import { StyleSheet, type ColorValue } from 'react-native';
 import { colors } from '../../ui/theme';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -30,21 +30,24 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.bg },
         tabBarStyle: {
           backgroundColor: colors.surface,
-          borderTopWidth: 0,
-          boxShadow: '0px -2px 12px rgba(30, 45, 90, 0.06)',
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: colors.accentStrong,
+          elevation: 0,
         },
         tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textFaint,
+        tabBarActiveTintColor: colors.text,
+        // 인스타그램처럼 아이콘만 표시 (이름은 접근성 라벨로 남음)
+        tabBarShowLabel: false,
+        tabBarInactiveTintColor: colors.text,
         // 보이지 않는 탭은 데이터가 바뀌어도 다시 그리지 않음 (운동 입력 중 성능)
         freezeOnBlur: true,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: '운동 기록', tabBarLabel: '홈', tabBarIcon: icon('barbell-outline', 'barbell') }} />
-      <Tabs.Screen name="calendar" options={{ title: '캘린더', tabBarIcon: icon('calendar-outline', 'calendar') }} />
-      <Tabs.Screen name="guide" options={{ title: '운동 가이드', tabBarLabel: '가이드', tabBarIcon: icon('book-outline', 'book') }} />
-      <Tabs.Screen name="stats" options={{ title: '통계', tabBarIcon: icon('stats-chart-outline', 'stats-chart') }} />
-      <Tabs.Screen name="settings" options={{ title: '설정', tabBarIcon: icon('settings-outline', 'settings') }} />
+      <Tabs.Screen name="index" options={{ title: '운동 기록', tabBarLabel: '홈', tabBarAccessibilityLabel: '홈', tabBarIcon: icon('barbell-outline', 'barbell') }} />
+      <Tabs.Screen name="calendar" options={{ title: '캘린더', tabBarAccessibilityLabel: '캘린더', tabBarIcon: icon('calendar-outline', 'calendar') }} />
+      <Tabs.Screen name="guide" options={{ title: '운동 가이드', tabBarLabel: '가이드', tabBarAccessibilityLabel: '운동 가이드', tabBarIcon: icon('book-outline', 'book') }} />
+      <Tabs.Screen name="stats" options={{ title: '통계', tabBarAccessibilityLabel: '통계', tabBarIcon: icon('stats-chart-outline', 'stats-chart') }} />
+      <Tabs.Screen name="settings" options={{ title: '설정', tabBarAccessibilityLabel: '설정', tabBarIcon: icon('settings-outline', 'settings') }} />
     </Tabs>
   );
 }

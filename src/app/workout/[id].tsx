@@ -358,7 +358,7 @@ function ExerciseBlock(p: BlockProps) {
               <Text style={styles.blockTitle} numberOfLines={1}>
                 {p.name}
               </Text>
-              <Ionicons name="information-circle-outline" size={18} color={colors.primary} />
+              <Ionicons name="information-circle-outline" size={18} color={colors.textFaint} />
             </View>
             <Text style={styles.blockSub}>휴식 {formatClock(p.rest)}</Text>
           </View>
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   },
   recTitle: { color: colors.text, fontSize: 14, fontWeight: '800', fontVariant: ['tabular-nums'] },
   recReason: { color: colors.textMuted, fontSize: 12, marginTop: 1 },
-  recBtn: { backgroundColor: colors.primary, borderRadius: radius.sm, paddingHorizontal: 14, height: 34, justifyContent: 'center' },
+  recBtn: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.accentStrong, borderRadius: radius.sm, paddingHorizontal: 14, height: 34, justifyContent: 'center' },
   recBtnText: { color: colors.primaryText, fontWeight: '700', fontSize: 13 },
   exNote: { color: colors.textMuted, fontSize: 13, marginBottom: 4 },
   hint: { color: colors.textFaint, fontSize: 12, textAlign: 'center', marginTop: space.md },

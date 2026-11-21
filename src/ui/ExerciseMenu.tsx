@@ -74,7 +74,7 @@ export function ExerciseMenu(p: Props) {
         <Switch
           value={!!p.we.showSetNotes}
           onValueChange={p.onToggleSetNotes}
-          trackColor={{ true: colors.primary, false: colors.border }}
+          trackColor={{ true: colors.textMuted, false: colors.accentStrong }}
           thumbColor="#fff"
         />
       </View>

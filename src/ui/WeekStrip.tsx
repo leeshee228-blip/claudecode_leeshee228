@@ -40,7 +40,7 @@ export function WeekStrip({ today, workedDays, onPressDay }: Props) {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   day: { alignItems: 'center', gap: 6, paddingVertical: space.sm, width: 44, borderRadius: 22 },
-  today: { backgroundColor: colors.surface },
+  today: { backgroundColor: colors.accent },
   label: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
   labelToday: {
     color: colors.bg,

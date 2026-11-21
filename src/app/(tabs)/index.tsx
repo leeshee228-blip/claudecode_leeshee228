@@ -116,10 +116,10 @@ export default function HomeScreen() {
               <Stat label="이번 주" value={`${weekCount}회`} icon="today" />
             </Card>
             <Card style={styles.statCard}>
-              <Stat label="이번 달" value={`${monthCount}회`} icon="calendar" tint={colors.success} tintBg={colors.successBg} />
+              <Stat label="이번 달" value={`${monthCount}회`} icon="calendar" />
             </Card>
             <Card style={styles.statCard}>
-              <Stat label="총 운동" value={`${data.workouts.length}회`} icon="trophy" tint={colors.warning} tintBg={colors.warningSoft} />
+              <Stat label="총 운동" value={`${data.workouts.length}회`} icon="trophy" />
             </Card>
           </View>
           <SectionTitle>최근 운동</SectionTitle>
@@ -136,13 +136,15 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   content: { padding: space.lg, paddingBottom: 40 },
   hero: {
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radius.lg,
     padding: space.xl,
     gap: 4,
   },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  heroDate: { color: colors.primary, fontSize: 13, fontWeight: '700' },
+  heroDate: { color: colors.textMuted, fontSize: 13, fontWeight: '600' },
   heroTitle: { color: colors.text, fontSize: 22, fontWeight: '800', marginTop: 2 },
   heroSub: { color: colors.textMuted, fontSize: 14, lineHeight: 20 },
   heroButton: { marginTop: space.lg },
@@ -151,7 +153,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.accent,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
@@ -159,7 +161,7 @@ const styles = StyleSheet.create({
   streakText: { color: colors.text, fontWeight: '700', fontSize: 12 },
   links: { flexDirection: 'row', gap: space.lg },
   routineEmptyTitle: { color: colors.text, fontSize: 14, fontWeight: '800', marginBottom: 2 },
-  link: { color: colors.primary, fontWeight: '700', fontSize: 15 },
+  link: { color: colors.text, fontWeight: '600', fontSize: 14 },
   routineScroll: { marginHorizontal: -space.lg },
   routines: { paddingHorizontal: space.lg, paddingVertical: 4, gap: space.md },
   routineEmpty: {
@@ -170,7 +172,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: colors.primaryMid,
+    borderColor: colors.accentStrong,
     backgroundColor: colors.surface,
   },
   routineEmptyText: { color: colors.textMuted, fontSize: 13, lineHeight: 19, flex: 1 },

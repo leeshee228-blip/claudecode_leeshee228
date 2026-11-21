@@ -11,7 +11,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#F4F6FB",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -22,7 +22,7 @@
       "favicon": "./assets/favicon.png"
     },
     "scheme": "workoutlog",
-    "backgroundColor": "#F4F6FB",
+    "backgroundColor": "#FFFFFF",
     "plugins": [
       [
         "expo-router",

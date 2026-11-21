@@ -39,7 +39,7 @@ export function MuscleBalance({ rows }: { rows: MuscleWeek[] }) {
         );
       })}
       <Text style={styles.legend}>
-        옅은 칸 = 권장 범위(주 {WEEKLY_SET_RANGE.min}~{WEEKLY_SET_RANGE.max}세트, 근비대 기준). 완료 체크한 세트만 셉니다.
+        회색 칸 = 권장 범위(주 {WEEKLY_SET_RANGE.min}~{WEEKLY_SET_RANGE.max}세트, 근비대 기준). 완료 체크한 세트만 셉니다.
       </Text>
     </View>
   );
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
   sets: { color: colors.text, fontSize: 14, fontWeight: '700', fontVariant: ['tabular-nums'] },
   pill: { fontSize: 11, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
   track: { height: 8, borderRadius: radius.sm, backgroundColor: colors.surfaceAlt, overflow: 'hidden' },
-  zone: { position: 'absolute', top: 0, bottom: 0, backgroundColor: colors.successBg },
+  zone: { position: 'absolute', top: 0, bottom: 0, backgroundColor: colors.accentStrong },
   fill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: radius.sm },
   legend: { color: colors.textFaint, fontSize: 12, lineHeight: 18 },
 });

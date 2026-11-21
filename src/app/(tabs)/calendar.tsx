@@ -88,7 +88,7 @@ export default function CalendarScreen() {
                 accessibilityLabel={`${formatDateKo(key)}${has ? ', 운동함' : ''}`}
               >
                 <View style={[styles.day, has && styles.dayDone, isSel && (has ? styles.daySelDone : styles.daySel)]}>
-                  <Text style={[styles.dayText, has && styles.dayTextDone, isToday && !has && { color: colors.primary }]}>
+                  <Text style={[styles.dayText, has && styles.dayTextDone, isToday && !has && { color: colors.text, fontWeight: '800' }]}>
                     {Number(key.slice(8))}
                   </Text>
                 </View>
@@ -138,9 +138,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  dayDone: { backgroundColor: colors.primary },
-  daySel: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
-  daySelDone: { backgroundColor: colors.primary, borderColor: colors.primaryMid },
+  dayDone: { backgroundColor: colors.accent },
+  daySel: { borderColor: colors.text, backgroundColor: colors.surface },
+  daySelDone: { backgroundColor: colors.accent, borderColor: colors.text },
   dayText: { color: colors.textMuted, fontSize: 15, fontWeight: '600' },
   dayTextDone: { color: colors.primaryText, fontWeight: '800' },
   summary: { flexDirection: 'row', marginTop: space.md },

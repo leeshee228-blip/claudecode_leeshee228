@@ -23,7 +23,7 @@ js = js.replace(/<\/script/gi, '<\\/script');
 
 const html = `<title>운동 기록</title>
 <style>
-  :root { --app-bg: #F4F6FB; color-scheme: light; }
+  :root { --app-bg: #FFFFFF; color-scheme: light; }
   html, body { height: 100%; box-sizing: border-box; }
   body { overflow: hidden; background: var(--app-bg); }
   #root { display: flex; height: 100%; flex: 1; }

@@ -51,7 +51,7 @@ export function DialogHost() {
                     pressed && { opacity: 0.85 },
                   ]}
                 >
-                  <Text style={[styles.btnText, isCancel ? { color: colors.text } : { color: colors.primaryText }]}>{b.text}</Text>
+                  <Text style={[styles.btnText, isCancel ? { color: colors.text } : { color: danger ? '#FFFFFF' : colors.primaryText }]}>{b.text}</Text>
                 </Pressable>
               );
             })}
@@ -78,8 +78,8 @@ const styles = StyleSheet.create({
   buttons: { flexDirection: 'row', gap: space.sm, marginTop: space.md },
   buttonsStacked: { flexDirection: 'column' },
   btn: { minHeight: 46, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.md },
-  btnPrimary: { backgroundColor: colors.primary },
+  btnPrimary: { backgroundColor: colors.accent },
   btnDanger: { backgroundColor: colors.danger },
-  btnCancel: { backgroundColor: colors.surfaceAlt },
+  btnCancel: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.accentStrong },
   btnText: { fontSize: 15, fontWeight: '700' },
 });

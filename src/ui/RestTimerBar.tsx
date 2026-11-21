@@ -45,10 +45,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: colors.primaryMid,
-    boxShadow: '0px 6px 20px rgba(30, 45, 90, 0.15)',
+    borderColor: colors.border,
   },
-  progress: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.primarySoft },
+  progress: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.accent },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -66,6 +65,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt,
     justifyContent: 'center',
   },
-  btnStrong: { backgroundColor: colors.primary },
+  btnStrong: { backgroundColor: colors.accentStrong },
   btnText: { color: colors.text, fontWeight: '600', fontSize: 14 },
 });

@@ -22,13 +22,13 @@ type ButtonProps = {
 export function Button({ title, onPress, variant = 'primary', disabled, style, small, icon }: ButtonProps) {
   const bg =
     variant === 'primary'
-      ? colors.primary
+      ? colors.accent
       : variant === 'danger'
         ? colors.danger
         : variant === 'secondary'
-          ? colors.primarySoft
+          ? colors.surface
           : 'transparent';
-  const fg = variant === 'ghost' || variant === 'secondary' ? colors.primary : colors.primaryText;
+  const fg = variant === 'danger' ? '#FFFFFF' : variant === 'ghost' ? colors.textMuted : colors.text;
   return (
     <Pressable
       accessibilityRole="button"
@@ -40,7 +40,7 @@ export function Button({ title, onPress, variant = 'primary', disabled, style, s
       style={({ pressed }) => [
         styles.button,
         small && styles.buttonSmall,
-        variant === 'primary' && !disabled && styles.buttonRaised,
+        variant === 'secondary' && styles.buttonOutline,
         { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
         style,
       ]}
@@ -107,7 +107,7 @@ export function Empty({ title, hint, icon }: { title: string; hint?: string; ico
     <View style={styles.empty}>
       {icon ? (
         <View style={styles.emptyIcon}>
-          <Ionicons name={icon} size={30} color={colors.primary} />
+          <Ionicons name={icon} size={30} color={colors.text} />
         </View>
       ) : null}
       <Text style={styles.emptyTitle}>{title}</Text>
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: space.sm,
   },
-  buttonRaised: { boxShadow: '0px 4px 12px rgba(61, 109, 242, 0.28)' },
+  buttonOutline: { borderWidth: 1, borderColor: colors.accentStrong },
   buttonSmall: { minHeight: 38, paddingHorizontal: space.md, borderRadius: radius.sm, gap: 6 },
   buttonText: { fontSize: 16, fontWeight: '700' },
   buttonTextSmall: { fontSize: 14, fontWeight: '600' },
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  chipSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
   chipText: { color: colors.textMuted, fontSize: 14, fontWeight: '600' },
   chipTextSelected: { color: colors.primaryText },
   stat: { flex: 1, gap: 2 },
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   statLabel: { color: colors.textMuted, fontSize: 13 },
-  statValue: { color: colors.text, fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  statValue: { color: colors.text, fontSize: 22, fontWeight: '700', fontVariant: ['tabular-nums'] },
   statSub: { color: colors.textFaint, fontSize: 12 },
   sectionRow: {
     flexDirection: 'row',
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     marginTop: space.xl,
     marginBottom: space.md,
   },
-  sectionTitle: { color: colors.text, fontSize: 18, fontWeight: '800' },
+  sectionTitle: { color: colors.text, fontSize: 17, fontWeight: '700' },
   empty: { alignItems: 'center', paddingVertical: 36, gap: 8 },
   emptyIcon: {
     width: 64,
