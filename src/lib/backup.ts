@@ -47,6 +47,7 @@ function parseWorkout(v: unknown): Workout {
             reps: isNum(s.reps) ? s.reps : 0,
             done: s.done === true,
             ...(isStr(s.note) && s.note ? { note: s.note } : {}),
+            ...(isNum(s.rpe) && s.rpe >= 1 && s.rpe <= 10 ? { rpe: s.rpe } : {}),
           };
         }),
       };
@@ -68,6 +69,7 @@ function parseRoutine(v: unknown): Routine {
         id: it.id,
         exerciseId: it.exerciseId,
         sets: isNum(it.sets) && it.sets > 0 ? Math.round(it.sets) : 3,
+        ...(isNum(it.reps) && it.reps > 0 ? { reps: Math.round(it.reps) } : {}),
         ...(isNum(it.restSeconds) && it.restSeconds > 0 ? { restSeconds: it.restSeconds } : {}),
       };
     }),
@@ -94,6 +96,7 @@ export function parseBackup(text: string): AppData {
     settings: {
       restSeconds: isNum(settings.restSeconds) && settings.restSeconds > 0 ? settings.restSeconds : 90,
       unit: settings.unit === 'lb' ? 'lb' : 'kg',
+      ...(settings.trackRpe === false ? { trackRpe: false } : {}),
     },
   };
 }
@@ -121,7 +124,7 @@ const csvCell = (v: string | number) => {
 /** 완료된 세트를 한 줄씩 CSV로 */
 export function toCSV(data: AppData): string {
   const names = new Map(data.exercises.map((e) => [e.id, e]));
-  const rows: (string | number)[][] = [['날짜', '종목', '부위', '세트', `무게(${data.settings.unit})`, '횟수', '메모']];
+  const rows: (string | number)[][] = [['날짜', '종목', '부위', '세트', `무게(${data.settings.unit})`, '횟수', 'RPE', '메모']];
   const workouts = [...data.workouts].sort((a, b) =>
     a.date === b.date ? a.startedAt - b.startedAt : a.date < b.date ? -1 : 1,
   );
@@ -129,7 +132,7 @@ export function toCSV(data: AppData): string {
     for (const we of w.exercises) {
       const ex = names.get(we.exerciseId);
       we.sets.filter(isCounted).forEach((s, i) => {
-        rows.push([w.date, ex?.name ?? '(삭제된 종목)', ex?.category ?? '', i + 1, s.weight, s.reps, w.note]);
+        rows.push([w.date, ex?.name ?? '(삭제된 종목)', ex?.category ?? '', i + 1, s.weight, s.reps, s.rpe ?? '', w.note]);
       });
     }
   }

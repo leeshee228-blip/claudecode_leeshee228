@@ -14,6 +14,10 @@ type Props = {
   showNote?: boolean;
   /** 이 세트가 개인 최고 기록을 갱신했는지 */
   isPR?: boolean;
+  /** 체감 강도 입력 칸을 보여줄지 (방금 끝낸 세트) */
+  askRpe?: boolean;
+  /** RPE 기록 기능 사용 여부 */
+  rpeEnabled?: boolean;
   onChange: (patch: Partial<Omit<SetEntry, 'id'>>) => void;
   onToggleDone: () => void;
   onRemove: () => void;
@@ -64,6 +68,15 @@ function NumberField({
   );
 }
 
+/** RPE: 남은 반복 여력으로 고르는 체감 강도 */
+const RPE_OPTIONS = [
+  { value: 6, hint: '4회+ 여유' },
+  { value: 7, hint: '3회 여유' },
+  { value: 8, hint: '2회 여유' },
+  { value: 9, hint: '1회 여유' },
+  { value: 10, hint: '한계' },
+];
+
 function parse(t: string): number {
   const n = parseFloat(t);
   return Number.isNaN(n) ? 0 : n;
@@ -73,8 +86,22 @@ function format(n: number): string {
   return n ? String(n) : '';
 }
 
-export const SetRow = memo(function SetRow({ index, set, prev, unit, showNote, isPR, onChange, onToggleDone, onRemove }: Props) {
+export const SetRow = memo(function SetRow({
+  index,
+  set,
+  prev,
+  unit,
+  showNote,
+  isPR,
+  askRpe,
+  rpeEnabled,
+  onChange,
+  onToggleDone,
+  onRemove,
+}: Props) {
   const prevText = prev ? formatSet(prev) : '—';
+  const [editingRpe, setEditingRpe] = useState(false);
+  const showRpePicker = !!rpeEnabled && set.done && (editingRpe || (!!askRpe && set.rpe === undefined));
   return (
     <View>
     <View style={[styles.row, set.done && styles.rowDone]}>
@@ -100,6 +127,16 @@ export const SetRow = memo(function SetRow({ index, set, prev, unit, showNote, i
         <Text style={styles.prev} numberOfLines={1}>
           {prevText}
         </Text>
+        {rpeEnabled && set.done && set.rpe !== undefined ? (
+          <Pressable
+            onPress={() => setEditingRpe((v) => !v)}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel={`${index + 1}세트 RPE ${set.rpe}, 바꾸기`}
+          >
+            <Text style={styles.rpeTag}>RPE {set.rpe}</Text>
+          </Pressable>
+        ) : null}
       </Pressable>
       <NumberField
         label={`${index + 1}세트 무게`}
@@ -130,6 +167,28 @@ export const SetRow = memo(function SetRow({ index, set, prev, unit, showNote, i
         <Ionicons name="checkmark" size={20} color={set.done ? colors.primaryText : colors.textFaint} />
       </Pressable>
     </View>
+    {showRpePicker ? (
+      <View style={styles.rpeRow} accessibilityLabel={`${index + 1}세트 체감 강도`}>
+        <Text style={styles.rpeLabel}>얼마나 힘들었나요?</Text>
+        <View style={styles.rpeChips}>
+          {RPE_OPTIONS.map((o) => (
+            <Pressable
+              key={o.value}
+              onPress={() => {
+                onChange({ rpe: o.value });
+                setEditingRpe(false);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`RPE ${o.value}: ${o.hint}`}
+              style={[styles.rpeChip, set.rpe === o.value && styles.rpeChipOn]}
+            >
+              <Text style={[styles.rpeChipNum, set.rpe === o.value && styles.rpeChipTextOn]}>{o.value}</Text>
+              <Text style={[styles.rpeChipHint, set.rpe === o.value && styles.rpeChipTextOn]}>{o.hint}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+    ) : null}
     {showNote ? (
       <TextInput
         accessibilityLabel={`${index + 1}세트 메모`}
@@ -160,6 +219,21 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4, borderRadius: radius.sm },
   rowDone: { backgroundColor: colors.successBg },
   indexCell: { width: 32, alignItems: 'center' },
+  rpeTag: { color: colors.primary, fontSize: 11, fontWeight: '700', marginTop: 1 },
+  rpeRow: { marginLeft: 40, marginTop: 4, marginBottom: 6, gap: 6 },
+  rpeLabel: { color: colors.textMuted, fontSize: 12, fontWeight: '600' },
+  rpeChips: { flexDirection: 'row', gap: 4 },
+  rpeChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceAlt,
+  },
+  rpeChipOn: { backgroundColor: colors.primary },
+  rpeChipNum: { color: colors.text, fontSize: 15, fontWeight: '800' },
+  rpeChipHint: { color: colors.textFaint, fontSize: 9, marginTop: 1 },
+  rpeChipTextOn: { color: colors.primaryText },
   pr: { position: 'absolute', top: -10, right: -6, fontSize: 12 },
   index: { color: colors.textMuted, fontWeight: '700', fontSize: 15 },
   prevCell: { flex: 1, minWidth: 56 },

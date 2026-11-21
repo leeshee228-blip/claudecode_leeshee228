@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { formatDateKo, parseDateKey, todayKey } from '../../lib/date';
-import { exerciseSummaries, formatNumber, weeklyVolume, weekStreak, workoutSetCount } from '../../lib/stats';
+import { addDays, formatDateKo, parseDateKey, todayKey, weekStartKey } from '../../lib/date';
+import { exerciseSummaries, formatNumber, weeklyMuscleSets, weeklyVolume, weekStreak, workoutSetCount } from '../../lib/stats';
 import { useData, useExerciseMap } from '../../store/DataProvider';
 import { BarChart } from '../../ui/charts';
-import { Card, Empty, SectionTitle, Stat } from '../../ui/components';
+import { Card, Chip, Empty, SectionTitle, Stat } from '../../ui/components';
+import { MuscleBalance } from '../../ui/MuscleBalance';
 import { colors, space } from '../../ui/theme';
 
 export default function StatsScreen() {
@@ -20,6 +21,11 @@ export default function StatsScreen() {
   const totalSets = data.workouts.reduce((s, w) => s + workoutSetCount(w), 0);
   const thisWeek = weeks[weeks.length - 1];
   const lastWeek = weeks[weeks.length - 2];
+  const [muscleWeek, setMuscleWeek] = useState<'this' | 'last'>('this');
+  const muscleRows = useMemo(() => {
+    const start = weekStartKey(today);
+    return weeklyMuscleSets(data.workouts, (id) => exMap.get(id)?.category, muscleWeek === 'this' ? start : addDays(start, -7));
+  }, [data.workouts, exMap, today, muscleWeek]);
   const diff = lastWeek && lastWeek.volume > 0 ? ((thisWeek.volume - lastWeek.volume) / lastWeek.volume) * 100 : null;
 
   return (
@@ -45,6 +51,20 @@ export default function StatsScreen() {
             return { label: `${d.getMonth() + 1}/${d.getDate()}`, value: w.volume };
           })}
         />
+      </Card>
+
+      <SectionTitle
+        right={
+          <View style={styles.toggle}>
+            <Chip label="이번 주" selected={muscleWeek === 'this'} onPress={() => setMuscleWeek('this')} />
+            <Chip label="지난주" selected={muscleWeek === 'last'} onPress={() => setMuscleWeek('last')} />
+          </View>
+        }
+      >
+        부위별 세트
+      </SectionTitle>
+      <Card>
+        <MuscleBalance rows={muscleRows} />
       </Card>
 
       <SectionTitle>종목별 기록</SectionTitle>
@@ -94,6 +114,7 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   content: { padding: space.lg, paddingBottom: 40 },
   row: { flexDirection: 'row' },
+  toggle: { flexDirection: 'row', gap: 6 },
   item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: space.md },
   itemBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   itemName: { color: colors.text, fontSize: 15, fontWeight: '700' },

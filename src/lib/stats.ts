@@ -1,5 +1,5 @@
 import { addDays, weekStartKey } from './date';
-import type { SetEntry, Workout, WorkoutExercise } from './types';
+import type { Category, SetEntry, Workout, WorkoutExercise } from './types';
 
 /** 기록으로 인정되는 세트: 완료 체크 + 횟수 1 이상 */
 export function isCounted(s: SetEntry): boolean {
@@ -194,4 +194,31 @@ export function formatNumber(n: number): string {
 /** 세트 표기: 무게가 있으면 "60×10", 맨몸이면 "10회" (unit을 주면 "60kg×10") */
 export function formatSet(s: { weight: number; reps: number }, unit = ''): string {
   return s.weight > 0 ? `${formatNumber(s.weight)}${unit}×${s.reps}` : `${s.reps}회`;
+}
+
+/** 주당 부위별 권장 세트 (근비대 기준 일반적 가이드: 10~20세트) */
+export const WEEKLY_SET_RANGE = { min: 10, max: 20 };
+
+export type MuscleWeek = { category: Category; sets: number };
+
+/** 해당 주(월~일)에 부위별로 완료한 세트 수. 기타는 제외 */
+export function weeklyMuscleSets(
+  workouts: Workout[],
+  categoryOf: (exerciseId: string) => Category | undefined,
+  weekStart: string,
+): MuscleWeek[] {
+  const end = addDays(weekStart, 7);
+  const counts = new Map<Category, number>();
+  for (const w of workouts) {
+    if (w.date < weekStart || w.date >= end) continue;
+    for (const we of w.exercises) {
+      const cat = categoryOf(we.exerciseId);
+      if (!cat || cat === '기타') continue;
+      counts.set(cat, (counts.get(cat) ?? 0) + we.sets.filter(isCounted).length);
+    }
+  }
+  return (['가슴', '등', '하체', '어깨', '팔', '코어'] as Category[]).map((category) => ({
+    category,
+    sets: counts.get(category) ?? 0,
+  }));
 }

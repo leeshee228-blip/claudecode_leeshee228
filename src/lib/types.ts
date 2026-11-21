@@ -16,6 +16,8 @@ export type SetEntry = {
   done: boolean;
   /** 세트별 메모 */
   note?: string;
+  /** 체감 강도 RPE (6~10, 10 = 한계) */
+  rpe?: number;
 };
 
 export type WorkoutExercise = {
@@ -49,6 +51,8 @@ export type RoutineItem = {
   id: string;
   exerciseId: string;
   sets: number;
+  /** 목표 반복 횟수 (추천 루틴 등에서 지정) */
+  reps?: number;
   restSeconds?: number;
 };
 
@@ -64,6 +68,8 @@ export type Unit = 'kg' | 'lb';
 export type Settings = {
   restSeconds: number;
   unit: Unit;
+  /** 세트 완료 후 체감 강도(RPE) 입력 (기본 켬) */
+  trackRpe?: boolean;
 };
 
 export type AppData = {

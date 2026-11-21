@@ -100,7 +100,7 @@ export default function RoutineScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemName}>{ex?.name ?? '(삭제된 종목)'}</Text>
                     <Text style={styles.itemSub}>
-                      {it.sets}세트
+                      {it.sets}세트{it.reps ? ` × ${it.reps}회` : ''}
                       {it.restSeconds ? ` · 휴식 ${formatClock(it.restSeconds)}` : ''}
                     </Text>
                   </View>

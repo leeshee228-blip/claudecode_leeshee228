@@ -82,6 +82,25 @@ export default function SettingsScreen() {
         <Text style={styles.help}>표시 단위만 바뀌며, 이미 입력한 숫자는 변환되지 않습니다.</Text>
       </Card>
 
+      <SectionTitle>체감 강도(RPE) 기록</SectionTitle>
+      <Card>
+        <View style={styles.chips}>
+          <Chip
+            label="켜기"
+            selected={data.settings.trackRpe !== false}
+            onPress={() => dispatch({ type: 'updateSettings', patch: { trackRpe: true } })}
+          />
+          <Chip
+            label="끄기"
+            selected={data.settings.trackRpe === false}
+            onPress={() => dispatch({ type: 'updateSettings', patch: { trackRpe: false } })}
+          />
+        </View>
+        <Text style={styles.help}>
+          세트를 끝내면 얼마나 힘들었는지(남은 반복 여력) 고를 수 있어요. 기록할수록 다음 운동의 무게·횟수 추천이 정확해집니다.
+        </Text>
+      </Card>
+
       <SectionTitle>데이터 백업</SectionTitle>
       <Card style={{ gap: space.md }}>
         <Button title="백업 파일 내보내기 (JSON)" variant="secondary" onPress={exportJSON} />

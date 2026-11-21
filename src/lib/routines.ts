@@ -23,7 +23,7 @@ export function exercisesFromRoutine(routine: Routine, workouts: Workout[], now:
       ...(item.restSeconds ? { restSeconds: item.restSeconds } : {}),
       sets: Array.from({ length: item.sets }, (_, i) => {
         const ref = last[i] ?? last[last.length - 1];
-        return { id: uid(), weight: ref?.weight ?? 0, reps: ref?.reps ?? 0, done: false };
+        return { id: uid(), weight: ref?.weight ?? 0, reps: ref?.reps ?? item.reps ?? 0, done: false };
       }),
     };
   });

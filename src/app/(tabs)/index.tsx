@@ -82,17 +82,26 @@ export default function HomeScreen() {
 
           <SectionTitle
             right={
-              <Pressable onPress={() => router.push('/routine/edit')} hitSlop={8} accessibilityRole="button">
-                <Text style={styles.link}>+ 새 루틴</Text>
-              </Pressable>
+              <View style={styles.links}>
+                <Pressable onPress={() => router.push('/routine/recommend')} hitSlop={8} accessibilityRole="button">
+                  <Text style={styles.link}>추천 받기</Text>
+                </Pressable>
+                <Pressable onPress={() => router.push('/routine/edit')} hitSlop={8} accessibilityRole="button">
+                  <Text style={styles.link}>+ 새 루틴</Text>
+                </Pressable>
+              </View>
             }
           >
             내 루틴
           </SectionTitle>
           {routines.length === 0 ? (
-            <Pressable style={styles.routineEmpty} onPress={() => router.push('/routine/edit')}>
-              <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
-              <Text style={styles.routineEmptyText}>자주 하는 운동을 루틴으로 저장해 두면{'\n'}한 번에 시작할 수 있어요</Text>
+            <Pressable style={styles.routineEmpty} onPress={() => router.push('/routine/recommend')}>
+              <Ionicons name="sparkles-outline" size={22} color={colors.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.routineEmptyTitle}>어떤 운동을 할지 고민되나요?</Text>
+                <Text style={styles.routineEmptyText}>목표와 주당 횟수만 고르면 분할 루틴을 만들어 드려요</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.primary} />
             </Pressable>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.routineScroll} contentContainerStyle={styles.routines}>
@@ -148,6 +157,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   streakText: { color: colors.text, fontWeight: '700', fontSize: 12 },
+  links: { flexDirection: 'row', gap: space.lg },
+  routineEmptyTitle: { color: colors.text, fontSize: 14, fontWeight: '800', marginBottom: 2 },
   link: { color: colors.primary, fontWeight: '700', fontSize: 15 },
   routineScroll: { marginHorizontal: -space.lg },
   routines: { paddingHorizontal: space.lg, paddingVertical: 4, gap: space.md },

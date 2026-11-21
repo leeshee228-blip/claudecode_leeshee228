@@ -5,9 +5,10 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addDays, formatClock, formatDateLong, formatDuration, todayKey } from '../../lib/date';
 import { uid } from '../../lib/id';
+import { recommendNext, type Recommendation } from '../../lib/progression';
 import { isLastInSuperset } from '../../lib/routines';
-import { bestE1RMBefore, formatNumber, previousSets, prSetIds, workoutSetCount, workoutVolume } from '../../lib/stats';
-import type { Category, Exercise, SetEntry, WorkoutExercise } from '../../lib/types';
+import { bestE1RMBefore, formatNumber, formatSet, previousSets, prSetIds, workoutSetCount, workoutVolume } from '../../lib/stats';
+import type { Category, Exercise, SetEntry, Unit, WorkoutExercise } from '../../lib/types';
 import { useData, useExerciseMap } from '../../store/DataProvider';
 import { useRestTimerActions } from '../../store/RestTimer';
 import { Button, Card, Empty } from '../../ui/components';
@@ -236,7 +237,16 @@ export default function WorkoutScreen() {
               rest={we.restSeconds ?? data.settings.restSeconds}
               prev={history.get(we.exerciseId)?.prev ?? null}
               bestBefore={history.get(we.exerciseId)?.best ?? 0}
+              recommendation={
+                inProgress ? recommendNext(history.get(we.exerciseId)?.prev ?? null, ex?.category ?? '기타', unit, we.exerciseId) : null
+              }
+              rpeEnabled={data.settings.trackRpe !== false}
               unit={unit}
+              onApplyRec={(rec) => {
+                for (const s of we.sets) {
+                  if (!s.done) dispatch({ type: 'updateSet', workoutId: wid, weId: we.id, setId: s.id, patch: { weight: rec.weight, reps: rec.reps } });
+                }
+              }}
               onOpen={() => router.push(`/exercise/${we.exerciseId}`)}
               onMenu={() => setMenuFor(we.id)}
               onAddSet={() => addSet(we)}
@@ -317,7 +327,10 @@ type BlockProps = {
   rest: number;
   prev: SetEntry[] | null;
   bestBefore: number;
-  unit: string;
+  recommendation: Recommendation | null;
+  rpeEnabled: boolean;
+  unit: Unit;
+  onApplyRec: (rec: Recommendation) => void;
   onOpen: () => void;
   onMenu: () => void;
   onAddSet: () => void;
@@ -328,6 +341,12 @@ type BlockProps = {
 
 function ExerciseBlock(p: BlockProps) {
   const prs = prSetIds(p.we.sets, p.bestBefore);
+  // 방금 끝낸(가장 뒤의 완료) 세트에만 체감 강도를 묻는다
+  const lastDone = [...p.we.sets].reverse().find((s) => s.done);
+  const rec = p.recommendation;
+  const pending = p.we.sets.filter((s) => !s.done);
+  // 아직 안 한 세트가 추천값과 다를 때만 추천 카드 표시
+  const showRec = !!rec && pending.length > 0 && pending.some((s) => s.weight !== rec.weight || s.reps !== rec.reps);
   return (
     <Card style={[styles.block, p.superset ? styles.blockSuperset : null]}>
       <View style={styles.blockHead}>
@@ -349,6 +368,29 @@ function ExerciseBlock(p: BlockProps) {
         </Pressable>
       </View>
       {p.we.note ? <Text style={styles.exNote}>📝 {p.we.note}</Text> : null}
+      {showRec && rec ? (
+        <View style={styles.rec}>
+          <Ionicons
+            name={rec.kind === 'up' ? 'trending-up' : rec.kind === 'down' ? 'trending-down' : 'flag-outline'}
+            size={18}
+            color={colors.primary}
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.recTitle}>
+              오늘 목표 {formatSet(rec, p.unit)}
+            </Text>
+            <Text style={styles.recReason}>{rec.reason}</Text>
+          </View>
+          <Pressable
+            onPress={() => p.onApplyRec(rec)}
+            style={({ pressed }) => [styles.recBtn, pressed && { opacity: 0.8 }]}
+            accessibilityRole="button"
+            accessibilityLabel={`남은 세트에 ${formatSet(rec, p.unit)} 적용`}
+          >
+            <Text style={styles.recBtnText}>적용</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <SetHeader unit={p.unit} />
       {p.we.sets.map((s, i) => (
         <SetRow
@@ -359,6 +401,8 @@ function ExerciseBlock(p: BlockProps) {
           unit={p.unit}
           showNote={p.we.showSetNotes}
           isPR={prs.has(s.id)}
+          rpeEnabled={p.rpeEnabled}
+          askRpe={lastDone?.id === s.id}
           onChange={(patch) => p.onChangeSet(s, patch)}
           onToggleDone={() => p.onToggleDone(s)}
           onRemove={() => p.onRemoveSet(s, i)}
@@ -402,6 +446,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  rec: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.sm,
+    backgroundColor: colors.primarySoft,
+    borderRadius: radius.md,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
+    marginBottom: 6,
+  },
+  recTitle: { color: colors.text, fontSize: 14, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  recReason: { color: colors.textMuted, fontSize: 12, marginTop: 1 },
+  recBtn: { backgroundColor: colors.primary, borderRadius: radius.sm, paddingHorizontal: 14, height: 34, justifyContent: 'center' },
+  recBtnText: { color: colors.primaryText, fontWeight: '700', fontSize: 13 },
   exNote: { color: colors.textMuted, fontSize: 13, marginBottom: 4 },
   hint: { color: colors.textFaint, fontSize: 12, textAlign: 'center', marginTop: space.md },
   timer: { position: 'absolute', left: space.lg, right: space.lg },

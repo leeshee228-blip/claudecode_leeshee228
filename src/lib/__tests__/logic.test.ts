@@ -105,7 +105,7 @@ test('CSV escapes values and lists completed sets', () => {
   const csv = toCSV({ ...createDefaultData(), workouts: [w] });
   const lines = csv.split('\n');
   assert.equal(lines.length, 2);
-  assert.equal(lines[1], '2026-11-01,벤치프레스,가슴,1,100,5,"좋음, ""가볍게"""');
+  assert.equal(lines[1], '2026-11-01,벤치프레스,가슴,1,100,5,,"좋음, ""가볍게"""');
 });
 
 test('reducer: finishWorkout handles unchecked sets', () => {
