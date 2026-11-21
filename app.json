@@ -24,7 +24,12 @@
     "scheme": "workoutlog",
     "backgroundColor": "#F4F6FB",
     "plugins": [
-      "expo-router"
+      [
+        "expo-router",
+        {
+          "asyncRoutes": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false

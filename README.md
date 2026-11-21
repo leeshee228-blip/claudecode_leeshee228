@@ -45,6 +45,14 @@ npm run lint        # ESLint (eslint-config-expo)
 npm test            # 로직 단위 테스트 (통계, 백업, 리듀서, 루틴, 슈퍼세트, PR)
 ```
 
+### 웹 한 파일로 만들기
+
+```bash
+npm run build:web-single
+```
+
+`dist/workout-log.html` 하나에 앱 전체(코드·아이콘 글꼴·이미지)가 들어갑니다. claude.ai 페이지처럼 외부 파일을 불러올 수 없는 곳에서 웹 버전을 열 때 씁니다.
+
 ### 구조
 
 ```

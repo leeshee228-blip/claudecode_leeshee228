@@ -4,6 +4,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { DataProvider, useData } from '../store/DataProvider';
 import { RestTimerProvider } from '../store/RestTimer';
+import { DialogHost } from '../ui/DialogHost';
 import { colors } from '../ui/theme';
 
 function AppStack() {
@@ -44,6 +45,7 @@ export default function RootLayout() {
         <RestTimerProvider>
           <StatusBar style="dark" />
           <AppStack />
+          <DialogHost />
         </RestTimerProvider>
       </DataProvider>
     </SafeAreaProvider>
